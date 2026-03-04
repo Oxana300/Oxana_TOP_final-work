@@ -1,0 +1,101 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Теги товаров - Магазин{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-5">Теги товаров</h1>
+        <p class="lead">Просмотр товаров по тегам</p>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+        {% if tags %}
+        <div class="d-flex flex-wrap gap-2">
+            {% for tag in tags %}
+            <a href="{% url 'shop:product_list_by_tag' tag.slug %}" 
+               class="btn btn-outline-primary btn-sm m-1"
+               style="font-size: {% widthratio tag.get_product_count 10 0.5 %}rem;">
+                {{ tag.name }}
+                <span class="badge bg-primary text-white ms-1">{{ tag.get_product_count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        
+        <!-- Облако тегов в виде списка (альтернативное отображение) -->
+        <hr class="my-4">
+        
+        <h5 class="mb-3">Все теги списком:</h5>
+        <div class="list-group">
+            {% for tag in tags %}
+            <a href="{% url 'shop:product_list_by_tag' tag.slug %}" 
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                {{ tag.name }}
+                <span class="badge bg-primary rounded-pill">{{ tag.get_product_count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        
+        {% else %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle"></i>
+            Теги пока не добавлены. 
+            <a href="{% url 'admin:index' %}" class="alert-link">Добавить теги в админке</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Пагинация (если нужно) -->
+{% if is_paginated %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                <i class="bi bi-chevron-left"></i> Назад
+            </a>
+        </li>
+        {% endif %}
+        
+        <li class="page-item disabled">
+            <span class="page-link">
+                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+            </span>
+        </li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                Вперед <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Блок с информацией -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="bi bi-tags-fill display-4 text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-1">Что такое теги?</h5>
+                        <p class="text-muted mb-0">
+                            Теги помогают быстро находить товары по интересам. 
+                            Нажмите на любой тег, чтобы увидеть все товары с этой меткой.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

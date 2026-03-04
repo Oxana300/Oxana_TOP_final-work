@@ -1,0 +1,185 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Контакты - Магазин{% endblock %}
+
+{% block content %}
+<!-- Заголовок страницы -->
+<div class="page-header bg-light py-4 mb-4">
+    <div class="container">
+        <h1 class="display-4">Контакты</h1>
+        <p class="lead">Свяжитесь с нами любым удобным способом</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Контактная информация -->
+        <div class="col-lg-5 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-4">Как с нами связаться</h2>
+                    
+                    <!-- Телефон -->
+                    <div class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-telephone-fill text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="h6 mb-1">Телефон</h3>
+                            <p class="mb-0">
+                                <a href="tel:{{ contacts.phone }}" class="text-decoration-none">
+                                    {{ contacts.phone }}
+                                </a>
+                            </p>
+                            <small class="text-muted">{{ contacts.work_hours }}</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Email -->
+                    <div class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-envelope-fill text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="h6 mb-1">Email</h3>
+                            <p class="mb-0">
+                                <a href="mailto:{{ contacts.email }}" class="text-decoration-none">
+                                    {{ contacts.email }}
+                                </a>
+                            </p>
+                            <small class="text-muted">Ответим в течение 24 часов</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Адрес -->
+                    <div class="d-flex mb-4">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                                <i class="bi bi-geo-alt-fill text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="h6 mb-1">Адрес</h3>
+                            <p class="mb-0">{{ contacts.address }}</p>
+                            <small class="text-muted">{{ contacts.work_hours }}</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Социальные сети -->
+                    <h3 class="h6 mb-3">Мы в социальных сетях</h3>
+                    <div class="d-flex gap-2">
+                        {% for item in social %}
+                        <a href="{{ item.url }}" class="btn btn-outline-primary btn-sm" target="_blank">
+                            <i class="bi bi-{{ item.icon }}"></i> {{ item.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Реквизиты компании -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <h3 class="h6 mb-3">Реквизиты компании</h3>
+                    <table class="table table-sm">
+                        <tr>
+                            <td class="text-muted">ООО "Магазин"</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">ИНН 1234567890</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">КПП 123456789</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">ОГРН 1234567890123</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">БИК 123456789</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Форма обратной связи -->
+        <div class="col-lg-7 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="h4 mb-4">Напишите нам</h2>
+                    
+                    <form method="post" action="{% url 'shop:ticket_create' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Ваше имя</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Тема</label>
+                            <select class="form-select" id="subject" name="category">
+                                <option value="question">Вопрос о товаре</option>
+                                <option value="complaint">Жалоба</option>
+                                <option value="suggestion">Предложение</option>
+                                <option value="other">Другое</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Сообщение</label>
+                            <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="agree" name="agree_to_terms" required>
+                            <label class="form-check-label" for="agree">
+                                Я согласен на обработку персональных данных
+                            </label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            Отправить сообщение
+                        </button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Также вы можете создать обращение в 
+                        <a href="{% url 'shop:ticket_create' %}" class="alert-link">разделе поддержки</a>
+                        и отслеживать статус его выполнения.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Карта -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-body p-0">
+            <div class="ratio ratio-21x9">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2245.373536247736!2d37.6156!3d55.7558!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTXCsDQ1JzIwLjgiTiAzN8KwMzcnMDMuNCJF!5e0!3m2!1sru!2sru!4v1234567890"
+                    style="border:0;" 
+                    allowfullscreen="" 
+                    loading="lazy">
+                </iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

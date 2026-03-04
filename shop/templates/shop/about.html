@@ -1,0 +1,139 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}О нас - Магазин{% endblock %}
+
+{% block content %}
+<!-- Заголовок страницы -->
+<div class="page-header bg-light py-4 mb-4">
+    <div class="container">
+        <h1 class="display-4">О нашем магазине</h1>
+        <p class="lead">{{ company.description }}</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Основная информация -->
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h2 class="h3 mb-4">Наша миссия</h2>
+                    <p class="fs-5">{{ company.mission }}</p>
+                    
+                    <h3 class="h4 mt-4 mb-3">Наши ценности</h3>
+                    <ul class="list-unstyled">
+                        {% for value in company.values %}
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            {{ value }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Статистика компании -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body p-4">
+                    <h3 class="h5 mb-4">Мы в цифрах</h3>
+                    
+                    <div class="mb-4">
+                        <span class="h2 d-block">{{ company.stats.clients }}+</span>
+                        <small>довольных клиентов</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <span class="h2 d-block">{{ company.stats.orders }}+</span>
+                        <small>выполненных заказов</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <span class="h2 d-block">{{ company.stats.products }}+</span>
+                        <small>товаров в каталоге</small>
+                    </div>
+                    
+                    <div>
+                        <span class="h2 d-block">{{ company.stats.reviews }}+</span>
+                        <small>положительных отзывов</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-body p-4">
+                    <h3 class="h5 mb-3">С нами с {{ company.founded }} года</h3>
+                    <p class="text-muted mb-0">
+                        За это время мы помогли тысячам клиентов найти 
+                        идеальные товары для дома и семьи.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Наша команда -->
+    <h2 class="h3 mb-4">Наша команда</h2>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-5">
+        {% for member in team %}
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <!-- Аватар -->
+                    <div class="mb-3">
+                        {% if member.image %}
+                            <img src="{{ member.image }}" alt="{{ member.name }}" 
+                                 class="rounded-circle" width="120" height="120">
+                        {% else %}
+                            <div class="bg-secondary bg-opacity-10 rounded-circle d-inline-flex 
+                                        align-items-center justify-content-center" 
+                                 style="width: 120px; height: 120px;">
+                                <i class="bi bi-person-fill display-4 text-secondary"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h3 class="h5 mb-1">{{ member.name }}</h3>
+                    <p class="text-primary small mb-3">{{ member.position }}</p>
+                    <p class="text-muted small">{{ member.bio }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Преимущества -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="text-center">
+                <i class="bi bi-truck display-4 text-primary"></i>
+                <h4 class="h6 mt-3">Бесплатная доставка</h4>
+                <p class="small text-muted">При заказе от 3000 руб.</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                <i class="bi bi-shield-check display-4 text-primary"></i>
+                <h4 class="h6 mt-3">Гарантия качества</h4>
+                <p class="small text-muted">Все товары сертифицированы</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                <i class="bi bi-arrow-repeat display-4 text-primary"></i>
+                <h4 class="h6 mt-3">Лёгкий возврат</h4>
+                <p class="small text-muted">30 дней на возврат</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="text-center">
+                <i class="bi bi-headset display-4 text-primary"></i>
+                <h4 class="h6 mt-3">Поддержка 24/7</h4>
+                <p class="small text-muted">Всегда на связи</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,7 +3,7 @@
 """
 from django.db import models
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic.base import TemplateView
 from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
@@ -210,16 +210,100 @@ def add_review(request, product_slug):
     
     return redirect('shop:product_detail', slug=product_slug)
 
-def about_page(request):
+class AboutPageView(TemplateView):
     """Страница 'О нас'"""
-    return render(request, 'shopabout.html',{
-        'title': 'О нас',
-        'content': 'Мы - лучший магазин в радиусе километра от вас'
-    })
+    template_name = 'shop/about.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Информация о компании
+        context['company'] = {
+            'name': 'Магазин "Полезная микрозелень"',
+            'founded': 2026,
+            'description': 'Мы - современный интернет-магазин. Предлагаем свежую микрозелень премиум-класса, выращенную с соблюдением всех стандартов качества и готовые наборы для проращивания с подробными инструкциями.',
+            'mission': 'Делать покупки удобными, выгодными и приятными для каждого клиента.',
+            'values': [
+                'Экологическая чистота продукции – выращиваем без химических удобрений',
+                'Высокая концентрация полезных веществ в каждом ростке',
+                'Доступные цены и гибкая система скидок',
+                'Надёжность — быстрая доставка и гарантия',
+            ],
+            'stats': {
+                'clients': 1500,
+                'orders': 2500,
+                'products': 50,
+                'reviews': 800,
+            }
+        }
+        
+        # Команда компании
+        context['team'] = [
+            {
+                'name': 'Иван Петров',
+                'position': 'Генеральный директор',
+                'bio': 'Основатель магазина, более 10 лет в e-commerce',
+                'image': None,  # Здесь можно добавить путь к фото
+            },
+            {
+                'name': 'Елена Соколова',
+                'position': 'Руководитель отдела продаж',
+                'bio': 'Поможет выбрать идеальный товар',
+                'image': None,
+            },
+            {
+                'name': 'Оксана Зайкова',
+                'position': 'Главный технолог',
+                'bio': 'Отвечает за качество и доставку',
+                'image': None,
+            },
+        ]
+        
+        return context
+
+
+class ContactPageView(TemplateView):
+    """Страница 'Контакты'"""
+    template_name = 'shop/contact.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Контактная информация
+        context['contacts'] = {
+            'phone': '+7 (921) 459-15-74',
+            'email': 'info@myshop.ru',
+            'address': 'г. Сыктывкар, ул. Бабушкина, д. 19',
+            'work_hours': 'Пн-Пт: 9:00 - 20:00, Сб-Вс: 10:00 - 18:00',
+        }
+        
+        # Социальные сети
+        context['social'] = [
+            {'name': 'Telegram', 'icon': 'telegram', 'url': 'https://t.me/myshop'},
+            {'name': 'VK', 'icon': 'vk', 'url': 'https://vk.com/myshop'},
+            {'name': 'WhatsApp', 'icon': 'whatsapp', 'url': 'https://wa.me/79991234567'},
+            {'name': 'Instagram', 'icon': 'instagram', 'url': 'https://instagram.com/myshop'},
+        ]
+        
+        # Карта (можно использовать Яндекс.Карты или Google Maps)
+        context['map'] = {
+            'lat': 61.670411,  # Координаты центра Академии ТОП Сыктывкар
+            'lng': 50.833317,
+            'zoom': 15,
+        }
+        
+        return context
+
+
+# Сохраняем старые функции для обратной совместимости
+def about_page(request):
+    """Страница 'О нас' (для обратной совместимости)"""
+    return AboutPageView.as_view()(request)
+
 
 def contact_page(request):
-    """Страница 'Контакты'"""
-    return render(request, 'shop/contact.html')
+    """Страница 'Контакты' (для обратной совместимости)"""
+    return ContactPageView.as_view()(request)
 
 def cart_page(request):
     """Страница корзины"""

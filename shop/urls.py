@@ -11,9 +11,9 @@ urlpatterns = [
     # Главная страница
     path('', views.HomePageView.as_view(), name='home'),
     
-    # Страницы "О нас" и "Контакты"
-    path('about/', views.about_page, name='about'),
-    path('contact/', views.contact_page, name='contact'),
+    # Страницы "О нас" и "Контакты" (используем классы)
+    path('about/', views.AboutPageView.as_view(), name='about'),
+    path('contact/', views.ContactPageView.as_view(), name='contact'),
     
     # Список товаров
     path('products/', views.ProductListView.as_view(), name='product_list'),
