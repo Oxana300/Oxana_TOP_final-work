@@ -1,0 +1,117 @@
+{% extends 'shop/support/base.html' %}
+
+{% block support_content %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">{{ title }}</h4>
+            <a href="{% url 'shop:ticket_create' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle"></i> Новое обращение
+            </a>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        {% if stats %}
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="mb-0">{{ stats.total }}</h5>
+                        <small class="text-muted">Всего</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning bg-opacity-25">
+                    <div class="card-body text-center">
+                        <h5 class="mb-0">{{ stats.new }}</h5>
+                        <small class="text-muted">Новые</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info bg-opacity-25">
+                    <div class="card-body text-center">
+                        <h5 class="mb-0">{{ stats.in_progress }}</h5>
+                        <small class="text-muted">В работе</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success bg-opacity-25">
+                    <div class="card-body text-center">
+                        <h5 class="mb-0">{{ stats.resolved }}</h5>
+                        <small class="text-muted">Решено</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if tickets %}
+            <div class="list-group">
+                {% for ticket in tickets %}
+                    <a href="{% url 'shop:ticket_detail' ticket.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">
+                                    #{{ ticket.id }} - {{ ticket.subject }}
+                                </h6>
+                                <small class="text-muted">
+                                    {{ ticket.created_at|date:"d.m.Y H:i" }} | 
+                                    {{ ticket.get_category_display }}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge {% if ticket.status == 'new' %}bg-warning{% elif ticket.status == 'in_progress' %}bg-info{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ ticket.get_status_display }}
+                                </span>
+                                <span class="badge {% if ticket.priority == 'high' or ticket.priority == 'urgent' %}bg-danger{% else %}bg-secondary{% endif %} ms-1">
+                                    {{ ticket.get_priority_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% if ticket.response %}
+                            <div class="mt-2 small text-muted">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                Есть ответ администрации
+                            </div>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+            
+            {% if is_paginated %}
+                <nav class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Назад</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Вперед</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                У вас пока нет обращений. 
+                <a href="{% url 'shop:ticket_create' %}" class="alert-link">Создать первое обращение</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

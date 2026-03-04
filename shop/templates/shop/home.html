@@ -1,0 +1,91 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Главная - Магазин{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4">Добро пожаловать в наш магазин!</h1>
+        <p class="lead">Лучшие товары по выгодным ценам</p>
+    </div>
+</div>
+
+<!-- Рекомендуемые товары -->
+{% if featured_products %}
+<div class="mb-5">
+    <h2 class="mb-4">Рекомендуем</h2>
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for product in featured_products %}
+        <div class="col">
+            <div class="card product-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <p class="card-text text-muted">{{ product.category.name }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-4 fw-bold text-primary">
+                            ${{ product.get_final_price }}
+                        </span>
+                        {% if product.discount_price %}
+                        <span class="badge bg-danger">-{{ product.get_discount_percentage }}%</span>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-primary mt-3">
+                        Подробнее →
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Новинки -->
+{% if new_products %}
+<div class="mb-5">
+    <h2 class="mb-4">Новинки</h2>
+    <div class="row row-cols-2 row-cols-md-4 g-3">
+        {% for product in new_products %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-title">{{ product.name }}</h6>
+                    <p class="card-text">
+                        <span class="text-primary fw-bold">${{ product.get_final_price }}</span>
+                        {% if product.discount_price %}
+                        <span class="text-decoration-line-through text-muted">${{ product.price }}</span>
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-sm btn-outline-primary">
+                        В корзину
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Категории -->
+{% if categories %}
+<div>
+    <h2 class="mb-4">Категории</h2>
+    <div class="row row-cols-2 row-cols-md-3 g-3">
+        {% for category in categories %}
+        <div class="col">
+            <a href="{% url 'shop:product_list_by_category' category.slug %}" 
+               class="card text-decoration-none text-dark h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">{{ category.name }}</h5>
+                    <p class="card-text text-muted small">
+                        {{ category.get_product_count }} товаров
+                    </p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}{{ title }} - Поддержка{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="list-group">
+            <a href="{% url 'shop:ticket_create' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'ticket_create' %}active{% endif %}">
+                <i class="bi bi-plus-circle"></i> Создать обращение
+            </a>
+            <a href="{% url 'shop:my_tickets' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'my_tickets' %}active{% endif %}">
+                <i class="bi bi-list"></i> Мои обращения
+                {% if open_ticket_count > 0 %}
+                    <span class="badge bg-primary float-end">{{ open_ticket_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+        
+        {% if open_ticket_count > 0 or resolved_tickets_count > 0 %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">Статистика</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <span>Открытые:</span>
+                    <span class="badge bg-warning">{{ open_ticket_count }}</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <span>Решенные:</span>
+                    <span class="badge bg-success">{{ resolved_tickets_count }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-9">
+        {% block support_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

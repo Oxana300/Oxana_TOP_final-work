@@ -1,0 +1,39 @@
+{% extends 'shop/support/base.html' %}
+
+{% block support_content %}
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <h4 class="mb-0">Подтверждение удаления</h4>
+    </div>
+    <div class="card-body">
+        <p class="lead">Вы уверены, что хотите удалить обращение #{{ object.id }}?</p>
+        
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Внимание!</strong> Это действие нельзя отменить.
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6>{{ object.subject }}</h6>
+                <p class="text-muted">{{ object.message|truncatechars:200 }}</p>
+                <small class="text-muted">
+                    Создано: {{ object.created_at|date:"d.m.Y H:i" }}
+                </small>
+            </div>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{% url 'shop:ticket_detail' object.id %}" class="btn btn-secondary me-md-2">
+                    Отмена
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash"></i> Удалить обращение
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

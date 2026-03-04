@@ -1,0 +1,262 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}{{ product.name }} - Магазин{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'shop:home' %}">Главная</a></li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'shop:product_list_by_category' product.category.slug %}">
+                        {{ product.category.name }}
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">{{ product.name }}</li>
+            </ol>
+        </nav>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h1>{{ product.name }}</h1>
+                        <p class="text-muted">{{ product.category.name }}</p>
+                    </div>
+                    {% if product.is_featured %}
+                    <span class="badge bg-success fs-6">Рекомендуем</span>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div id="productImages" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% if product.images.all %}
+                                {% for image in product.images.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text }}">
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <div class="carousel-item active">
+                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
+                                        <span class="text-muted">Изображение отсутствует</span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if product.images.all|length > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#productImages">
+                                <span class="carousel-control-prev-icon"></span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#productImages">
+                                <span class="carousel-control-next-icon"></span>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-4">
+                            <h3>Цена</h3>
+                            <div class="d-flex align-items-baseline">
+                                <span class="display-5 fw-bold text-primary">
+                                    ${{ product.get_final_price }}
+                                </span>
+                                {% if product.discount_price %}
+                                <span class="ms-3 fs-4 text-decoration-line-through text-muted">
+                                    ${{ product.price }}
+                                </span>
+                                <span class="ms-2 badge bg-danger">
+                                    -{{ product.get_discount_percentage }}%
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Статус:</h5>
+                            {% if product.is_in_stock %}
+                            <span class="badge bg-success fs-6">В наличии ({{ product.stock_quantity }} шт.)</span>
+                            {% else %}
+                            <span class="badge bg-secondary fs-6">Нет в наличии</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h5>Рейтинг:</h5>
+                            <div class="d-flex align-items-center">
+                                <div class="me-2">
+                                    {% if average_rating %}
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= average_rating|floatformat:0 %}
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    {% else %}
+                                    <i class="bi bi-star text-muted"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                                    <span class="ms-2">({{ average_rating }})</span>
+                                    {% else %}
+                                    <span class="text-muted">Нет отзывов</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg">
+                                <i class="bi bi-cart"></i> Добавить в корзину
+                            </button>
+                            <button class="btn btn-outline-secondary">
+                                <i class="bi bi-heart"></i> В избранное
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h3>Описание</h3>
+                    <p class="lead">{{ product.description|default:"Описание отсутствует" }}</p>
+                </div>
+                
+                {% if product.tags.all %}
+                <div class="mb-4">
+                    <h5>Теги:</h5>
+                    {% for tag in product.tags.all %}
+                    <a href="{% url 'shop:product_list_by_tag' tag.slug %}" 
+                       class="badge bg-secondary text-decoration-none me-1">
+                        {{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Отзывы -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Отзывы ({{ product.reviews.count }})</h4>
+            </div>
+            <div class="card-body">
+                {% if product.reviews.all %}
+                <div class="mb-4">
+                    {% for review in product.reviews.all|slice:":5" %}
+                    <div class="border-bottom pb-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ review.user.username }}</strong>
+                            <small class="text-muted">{{ review.created_at|date:"d.m.Y" }}</small>
+                        </div>
+                        <div class="mb-2">
+                            {% for i in "12345" %}
+                            {% if forloop.counter <= review.rating %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            {% else %}
+                            <i class="bi bi-star text-muted"></i>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="mb-0">{{ review.comment }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">Отзывов пока нет. Будьте первым!</p>
+                {% endif %}
+                
+                <!-- Форма добавления отзыва -->
+                {% if user.is_authenticated %}
+                <h5 class="mb-3">Добавить отзыв</h5>
+                <form method="post" action="{% url 'shop:add_review' product.slug %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Ваша оценка</label>
+                        <select name="rating" class="form-select" required>
+                            <option value="">Выберите оценку</option>
+                            <option value="5">5 ★ Отлично</option>
+                            <option value="4">4 ★ Хорошо</option>
+                            <option value="3">3 ★ Удовлетворительно</option>
+                            <option value="2">2 ★ Плохо</option>
+                            <option value="1">1 ★ Очень плохо</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ваш комментарий</label>
+                        <textarea name="comment" class="form-control" rows="4" 
+                                  placeholder="Напишите ваш отзыв..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Оставить отзыв</button>
+                </form>
+                {% else %}
+                <p class="text-muted">
+                    <a href="{% url 'login' %}" class="text-primary">Войдите</a>, чтобы оставить отзыв.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Похожие товары -->
+        {% if related_products %}
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Похожие товары</h4>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-2 row-cols-md-4 g-3">
+                    {% for related in related_products %}
+                    <div class="col">
+                        <a href="{% url 'shop:product_detail' related.slug %}" 
+                           class="card text-decoration-none text-dark h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-title">{{ related.name }}</h6>
+                                <p class="card-text">
+                                    <span class="fw-bold text-primary">${{ related.get_final_price }}</span>
+                                </p>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Боковая панель -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Категории</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                {% for category in categories %}
+                <a href="{% url 'shop:product_list_by_category' category.slug %}" 
+                   class="list-group-item list-group-item-action {% if current_category and category.slug == current_category.slug %}active{% endif %}">
+                    {{ category.name }} <span class="badge bg-secondary float-end">{{ category.get_product_count }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Популярные теги</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2">
+                    {% for tag in tags|slice:":10" %}
+                    <a href="{% url 'shop:product_list_by_tag' tag.slug %}" 
+                       class="badge bg-light text-dark text-decoration-none p-2">
+                        {{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

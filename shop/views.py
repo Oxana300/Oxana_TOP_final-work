@@ -1,0 +1,528 @@
+"""
+Представления для приложения магазина
+"""
+from django.db import models
+from django.shortcuts import render, get_object_or_404, redirect
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic.base import TemplateView
+from django.views.generic.edit import FormView
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q, Count, Avg
+from django.core.paginator import Paginator
+from django.contrib import messages
+from django.http import JsonResponse
+from django.core.mail import send_mail
+from django.conf import settings
+from datetime import timedelta
+from django.utils import timezone
+
+from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment
+from .forms import (ProductReviewForm, 
+                    SupportTicketForm, 
+                    SupportTicketUpdateForm, 
+                    SupportResponseForm, 
+                    SupportTicketAttachmentForm, 
+                    UserRegistrationForm)
+
+
+class HomePageView(TemplateView):
+    """Главная страница магазина"""
+    template_name = 'shop/home.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Рекомендуемые товары
+        context['featured_products'] = Product.published.filter(is_featured=True)[:6]
+        # Новинки
+        context['new_products'] = Product.published.order_by('-created_at')[:8]
+        # Категории
+        context['categories'] = Category.objects.all()[:6]
+        return context
+
+class ProductListView(ListView):
+    """Список товаров"""
+    model = Product
+    template_name = 'shop/product_list.html'
+    context_object_name = 'products'
+    paginate_by = 12  # Товаров на страницу
+
+    def get_queryset(self):
+        queryset = Product.published.all().select_related('category').prefetch_related('tags')
+        
+        # Фильтр по категории
+        category_slug = self.kwargs.get('category_slug')
+        if category_slug:
+            queryset = queryset.filter(category__slug=category_slug)
+        
+        # Фильтр по тегу
+        tag_slug = self.kwargs.get('tag_slug')
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+        
+        # Поиск
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) | 
+                Q(description__icontains=search)
+            )
+        
+        # Сортировка
+        sort = self.request.GET.get('sort')
+        if sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
+        elif sort == 'name':
+            queryset = queryset.order_by('name')
+        elif sort == 'rating':
+            queryset = queryset.order_by('-rating')
+        
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        context['tags'] = Tag.objects.all()
+        
+        # Текущая категория
+        category_slug = self.kwargs.get('category_slug')
+        if category_slug:
+            context['current_category'] = get_object_or_404(Category, slug=category_slug)
+        
+        # Текущий тег
+        tag_slug = self.kwargs.get('tag_slug')
+        if tag_slug:
+            context['current_tag'] = get_object_or_404(Tag, slug=tag_slug)
+        
+        # Параметры фильтрации
+        context['search'] = self.request.GET.get('search', '')
+        context['sort'] = self.request.GET.get('sort', '')
+        
+        return context
+
+class ProductDetailView(DetailView):
+    """Страница товара"""
+    model = Product
+    template_name = 'shop/product_detail.html'
+    context_object_name = 'product'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+
+    def get_queryset(self):
+        return Product.published.select_related('category').prefetch_related('tags', 'images', 'reviews')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        product = self.object
+        
+        # Похожие товары из той же категории
+        context['related_products'] = Product.published.filter(
+            category=product.category
+        ).exclude(id=product.id)[:4]
+        
+        # Форма отзыва
+        context['review_form'] = ProductReviewForm()
+        
+        # Средний рейтинг
+        if product.reviews.exists():
+            avg_rating = product.reviews.aggregate(
+                models.Avg('rating')
+            )['rating__avg']
+            context['average_rating'] = round(avg_rating, 1)
+        
+        return context
+
+class ProductCreateView(LoginRequiredMixin, CreateView):
+    """Создание товара (только для авторизованных)"""
+    model = Product
+    template_name = 'shop/product_form.html'
+    fields = ['name', 'slug', 'description', 'price', 'discount_price', 
+              'category', 'tags', 'is_featured', 'stock_quantity']
+    success_url = reverse_lazy('shop:product_list')
+
+    def form_valid(self, form):
+        form.instance.status = 'published'
+        messages.success(self.request, 'Товар успешно создан!')
+        return super().form_valid(form)
+
+class ProductUpdateView(LoginRequiredMixin, UpdateView):
+    """Редактирование товара"""
+    model = Product
+    template_name = 'shop/product_form.html'
+    fields = ['name', 'slug', 'description', 'price', 'discount_price', 
+              'category', 'tags', 'is_featured', 'stock_quantity', 'status']
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+
+    def get_success_url(self):
+        return reverse_lazy('shop:product_detail', kwargs={'slug': self.object.slug})
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Товар успешно обновлен!')
+        return super().form_valid(form)
+
+class ProductDeleteView(LoginRequiredMixin, DeleteView):
+    """Удаление товара"""
+    model = Product
+    template_name = 'shop/product_confirm_delete.html'
+    slug_field = 'slug'
+    slug_url_kwarg = 'slug'
+    success_url = reverse_lazy('shop:product_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Товар успешно удален!')
+        return super().delete(request, *args, **kwargs)
+
+class CategoryListView(ListView):
+    """Список категорий"""
+    model = Category
+    template_name = 'shop/category_list.html'
+    context_object_name = 'categories'
+
+class TagListView(ListView):
+    """Список тегов"""
+    model = Tag
+    template_name = 'shop/tag_list.html'
+    context_object_name = 'tags'
+
+def add_review(request, product_slug):
+    """Добавление отзыва к товару"""
+    if request.method == 'POST':
+        form = ProductReviewForm(request.POST)
+        product = get_object_or_404(Product, slug=product_slug)
+        
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.save()
+            
+            # Обновляем рейтинг товара
+            avg_rating = product.reviews.aggregate(models.Avg('rating'))['rating__avg']
+            product.rating = avg_rating
+            product.save()
+            
+            messages.success(request, 'Отзыв успешно добавлен!')
+            return redirect('shop:product_detail', slug=product_slug)
+    
+    return redirect('shop:product_detail', slug=product_slug)
+
+def about_page(request):
+    """Страница 'О нас'"""
+    return render(request, 'shopabout.html',{
+        'title': 'О нас',
+        'content': 'Мы - лучший магазин в радиусе километра от вас'
+    })
+
+def contact_page(request):
+    """Страница 'Контакты'"""
+    return render(request, 'shop/contact.html')
+
+def cart_page(request):
+    """Страница корзины"""
+    return render(request, 'shop/cart.html')
+
+def checkout_page(request):
+    """Страница оформления заказа"""
+    return render(request, 'shop/checkout.html')
+
+# === Раздел поддержки ===
+class TicketCreateView(CreateView):
+    """Создание нового обращения"""
+    model = SupportTicket
+    form_class = SupportTicketForm
+    template_name = 'shop/support/ticket_form.html'
+    success_url = reverse_lazy('shop:my_tickets')
+    
+    def form_valid(self, form):
+        # Если пользователь авторизован, то привязываем обращение к нему
+        if self.request.user.is_authenticated:
+            form.instance.user = self.request.user
+            
+        ticket = form.save()
+        
+        # Отправляем уведомление администраторам (опционально)
+        try:
+            send_mail(
+                subject=f'Новое обращение #{ticket.id}: {ticket.subject}',
+                message=f'Категория: {ticket.get_category_display()}\n\n{ticket.message}',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[admin[1] for admin in settings.ADMINS],
+                fail_silently=True,
+            )
+        except:
+            pass
+
+        # Добавляем сообщение об успехе
+        messages.success(
+            self.request,
+            f'Обращение #{ticket.id} успешно создано!'
+            f'Мы ответим вам в течение 3 рабочих дней'
+        )
+        
+        return super().form_valid(form)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Создать обращение'
+        context['button_text'] = 'отправить обращение'
+        return context
+    
+class MyTicketsListView(LoginRequiredMixin, ListView):
+    """Список обращений пользователя"""
+    model = SupportTicket
+    template_name = 'shop/support/ticket_list.html'
+    context_object_name = 'tickets'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        # Возвращение только обращения текущего пользователя
+        return SupportTicket.objects.filter(
+            user = self.request.user
+        ).select_related('user').order_by('-created_at')
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Мои обращения'
+        
+        # Статистика
+        context['stats'] = {
+            'total': SupportTicket.objects.filter(user=self.request.user).count(),
+            'new': SupportTicket.objects.filter(
+                user=self.request.user,
+                status='new'
+            ).count(),
+            'in_progress': SupportTicket.objects.filter(
+                user=self.request.user,
+                status='in_progress'
+            ).count(),
+            'resolved': SupportTicket.objects.filter(
+                user=self.request.user,
+                is_resolved=True
+            ).count(),
+        }
+        
+        return context
+    
+class TicketDetailView(LoginRequiredMixin, DetailView):
+        """Детальный просмотр сообщения"""
+        model = SupportTicket
+        template_name = 'shop/support/ticket_detail.html'
+        context_object_name = 'ticket'
+        
+        def get_queryset(self):
+             # Проверяем, что пользователь имеет доступ только к своим обращениям
+            return SupportTicket.objects.filter(
+            user = self.request.user
+        )
+            
+        def get_context_data(self, **kwargs):
+            context = super().get_context_data(**kwargs)
+            context['title'] = f'Обращение #{self.object.id}'
+            context['attachment_form'] = SupportTicketAttachmentForm()
+            return context
+        
+class TicketUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """ Редактирование обращения (только владелец)"""
+    model = SupportTicket
+    form_class = SupportTicketUpdateForm
+    template_name = 'shop/support/ticket_form.html'
+    
+    def test_func(self):
+        """Проверка на владельца"""
+        ticket = self.get_object()
+        return ticket.user == self.request.user 
+    
+    def get_success_url(self):
+        return reverse_lazy('shop:ticket_detail', kwargs={'pk':self.object.pk})
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Редактировать обращение'
+        context['button_text'] = 'Сохранить изменения'
+        return context
+       
+    def form_valid(self, form):
+        messages.success(self.request, 'Обращение успешно обновлено!')
+        return super().form_valid(form)
+            
+class TicketDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    """Удаление обращения (только владелец)"""
+    model = SupportTicket
+    template_name = 'shop/support/ticket_confirm_delete.html'
+    success_url = reverse_lazy('shop:my_tickets')
+    
+    def test_func(self):
+        """Проверка на владельца"""
+        ticket = self.get_object()
+        return ticket.user == self.request.user
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Обращение успешно удалено!')
+        return super().delete(request, *args, **kwargs)
+    
+class AdminResponseView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    """Ответ администрации на обращение"""      
+    model = SupportTicket
+    form_class = SupportResponseForm
+    template_name = 'shop/suport/admin_response.html'
+    
+    def test_func(self):
+        """Проверка: ТОлько суперпользователь или персонал"""
+        return self.request.user.is_staff or self.request.user.is_superuser
+    
+    def get_success_url(self):
+        return reverse_lazy('admin:shop_supportticket_changelist')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f'Ответ на обращение #{self.object.id}'
+        context['ticket'] = self.object
+        return context
+    
+    def form_valid(self,form):
+        ticket = form.save(commit=False)
+        
+        # ЕСли ответ опубликован - отправляем уведомление
+        if form.cleaned_data.get('send_notification') and ticket.is_public:
+            try:
+                send_mail(
+                    subject=f'Ответ на ваше обращение #{ticket.id}',
+                    message=f'Здравствуйте!\n\n{ticket.response}\n\nС уважением, администрация магазина.',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[ticket.email],
+                    fail_silently=False,
+                )
+                messages.success(self.request, 'Ответ отправлен пользователю на email')
+            except Exception as e:
+                messages.warning(self.request, f'Ошибка отправки email: {str(e)}')
+        
+        ticket.save()
+        messages.success(self.request, 'Ответ сохранен')
+        return super().form_valid(form)
+    
+    
+class AdminTicketListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """Список всех обращений в админ панели"""
+    model = SupportTicket
+    template_name = 'shop/suport/admin_tickets.html'    
+    context_object_name = 'tickets'
+    paginate_by = 20
+    
+    def test_func(self):
+        """Проверка: ТОлько суперпользователь или персонал"""
+        return self.request.user.is_staff or self.request.user.is_superuser
+    
+    def get_queryset(self):
+        queryset = SupportTicket.objects.all().select_related('user').order_by('-priority', '-created_at')
+        
+        # Фильтры
+        
+        status = self.request.GET.get('status')
+        if status:
+            queryset = queryset.filter(status = status) 
+            
+        category = self.request.GET.get('category')
+        if category:
+            queryset = queryset.filter(category = category)
+            
+        search = self.request.GET.get('search')
+        if search:
+            queryset = queryset.filter(
+                Q(subject__icontains= search) |
+                Q(email__icontains = search) |
+                Q(message__icontains = search)
+            )   
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Все обращения'
+        context['categories'] = SupportTicket.CATEGORY_CHOICES
+        context['statuses'] = SupportTicket.STATUS_CHOICES
+        
+        context ['stats'] = {
+            'total': SupportTicket.objects.count(),
+            'new': SupportTicket.objects.filter(status = 'new').count(),
+            'in_progress': SupportTicket.objects.filter(status = 'in_progress').count(),
+            'resolved': SupportTicket.objects.filter(is_resolved = True).count(),
+            'overdue':SupportTicket.objects.filter(
+                status__in=['new', 'in_progress']
+            ).filter(created_at__lt=timezone.now()-timedelta(days=7)).count(),
+        }
+        
+        return context
+    
+@login_required
+def add_attachment(request, pk):
+    """Добавления вложения к обращению"""
+    ticket = get_object_or_404(SupportTicket, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = SupportTicketAttachmentForm(request.POST, request.FILES)
+        if form.is_valid():
+            attachment = form.save(commit=False)
+            attachment.ticket = ticket
+            attachment.save()
+            messages.success(request, 'Файл успешно загружен')
+            return redirect('shop:ticket_detail', pk=pk)
+    else:
+        form = SupportTicketAttachmentForm()
+        
+    return render(request, 'shop/support/add_attachment.html', {
+        'form': form,
+        'ticket': ticket
+    })
+
+@login_required
+def check_email_ajax(request):
+    """AJAX проверка email на наличие активных обращений"""
+    if request.method == 'GET':
+        email = request.GET.get('email', '')
+        
+        if email:
+            active_count= SupportTicket.objects.filter(
+                email = email,
+                status__in=['nem', 'in_progress']
+            ).count()
+            
+            return JsonResponse({
+                'valid': active_count < 3,
+                'active_count': active_count,
+                'message': f'Активных обращений: {active_count} / 3' if active_count>=3 else ''
+            }) 
+    return JsonResponse({'error':'Invalid request'}, status=400)
+
+def register_view(request):
+    """Страница регистрации пользователя"""
+    if request.user.is_authenticated:
+        return redirect('shop:home')
+    
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            
+            # Дополнительная информация (если нужно сохранить телефон и возраст)
+            # profile = UserProfile.objects.create(
+            #     user=user,
+            #     phone=form.cleaned_data.get('phone'),
+            #     age=form.cleaned_data.get('age')
+            # )
+            
+            messages.success(
+                request, 
+                'Регистрация прошла успешно! Теперь вы можете войти в свой аккаунт.'
+            )
+            return redirect('login')
+        else:
+            messages.error(request, 'Пожалуйста, исправьте ошибки в форме.')
+    else:
+        form = UserRegistrationForm()
+    
+    return render(request, 'shop/register.html', {
+        'form': form,
+        'title': 'Регистрация'
+    })

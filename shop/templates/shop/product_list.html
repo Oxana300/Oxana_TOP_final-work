@@ -1,0 +1,151 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Товары - Магазин{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Фильтры (слева) -->
+    <div class="col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Фильтры</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'shop:product_list' %}">
+                    <!-- Поиск -->
+                    <div class="mb-3">
+                        <label class="form-label">Поиск</label>
+                        <input type="text" name="search" class="form-control" 
+                               value="{{ search }}" placeholder="Название или описание...">
+                    </div>
+                    
+                    <!-- Категории -->
+                    <div class="mb-3">
+                        <label class="form-label">Категория</label>
+                        <select name="category" class="form-select">
+                            <option value="">Все категории</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.slug }}" {% if current_category and cat.slug == current_category.slug %}selected{% endif %}>
+                                {{ cat.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Сортировка -->
+                    <div class="mb-3">
+                        <label class="form-label">Сортировка</label>
+                        <select name="sort" class="form-select">
+                            <option value="">По умолчанию</option>
+                            <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>
+                                Цена: по возрастанию
+                            </option>
+                            <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>
+                                Цена: по убыванию
+                            </option>
+                            <option value="name" {% if sort == 'name' %}selected{% endif %}>
+                                Название
+                            </option>
+                            <option value="rating" {% if sort == 'rating' %}selected{% endif %}>
+                                Рейтинг
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Применить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Список товаров (справа) -->
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Каталог товаров</h1>
+            <span class="text-muted">
+                Найдено: {{ products.paginator.count }} товаров
+            </span>
+        </div>
+        
+        {% if products %}
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for product in products %}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body">
+                        {% if product.is_featured %}
+                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Рекомендуем</span>
+                        {% endif %}
+                        
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text text-muted small">{{ product.category.name }}</p>
+                        
+                        <div class="mb-3">
+                            {% if product.tags.all %}
+                            {% for tag in product.tags.all|slice:":3" %}
+                            <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fs-5 fw-bold text-primary">
+                                ${{ product.get_final_price }}
+                            </span>
+                            {% if product.discount_price %}
+                            <span class="text-decoration-line-through text-muted">
+                                ${{ product.price }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'shop:product_detail' product.slug %}" 
+                               class="btn btn-outline-primary">
+                                Подробнее
+                            </a>
+                            <button class="btn btn-primary">
+                                В корзину
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Пагинация -->
+        {% if products.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">Назад</a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Страница {{ products.number }} из {{ products.paginator.num_pages }}
+                    </span>
+                </li>
+                
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">Вперед</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            Товары не найдены. Попробуйте изменить фильтры.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,11 @@
+<!--{% block title %} {% endblock %} Блок, который можно переопределить в дочерних шаблонах
+{% url 'shop:home' %} {% endblock %} Блок, к-ый генерирует URL по имени маршрута
+{% if user.is_authenticated %} {% endblock %} Блок, к-ый определяет авторизацию пользователя
+{% for message in messages %} Выводит сообщение(например об успешном добавлении товара в корзину)>
+
+<!-- 
+{% for product in products %} {% endfor %} - Блок цикла по товарам
+{% if product.discount_price %} {% endif %} - Условие для отображения скидки
+${{ product.get_final_price }} - Вызов метода модели (метод get_final_price, модель- Product)
+{% if products.has_other_pages %} {% endif %} - Проверка на наличие пагинации
+-->

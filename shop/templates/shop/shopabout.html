@@ -1,0 +1,30 @@
+{% extends 'shop/base.html'%}
+{% block title%} О нас - Магазин {% endblock%}
+{% block content %}
+<div class='row'>
+    <div class="col-md-8 mx-auto">
+        <h1 class="md-4">О нас</h1>
+        <p class="lead">{{content}}</p>
+
+        <div class = "card mb-4">
+            <div class="card-body">
+                <h3>Наши ценности</h3>
+                <ul>
+                    <li>Качество</li>
+                    <li>Доступность</li>
+                    <li>Инновации</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class "card">
+            <div class"card-body">
+                <h3>Контакты</h3>
+                <p>Телефон: +7(999)999-99-99</p>
+                <p>Email: emailexample@example.com</p>
+            </div>
+        </div>
+    </div>        
+</div>
+
+{% endblock%}

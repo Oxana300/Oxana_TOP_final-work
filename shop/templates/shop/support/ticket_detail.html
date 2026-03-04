@@ -1,0 +1,106 @@
+{% extends 'shop/support/base.html' %}
+
+{% block support_content %}
+<div class="card mb-3">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">{{ title }}</h4>
+            <div>
+                <a href="{% url 'shop:my_tickets' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Назад
+                </a>
+                {% if not ticket.is_resolved %}
+                    <a href="{% url 'shop:ticket_edit' ticket.id %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </a>
+                {% endif %}
+                <a href="{% url 'shop:ticket_delete' ticket.id %}" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i> Удалить
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tr>
+                        <th style="width: 120px;">Номер:</th>
+                        <td>#{{ ticket.id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Тема:</th>
+                        <td>{{ ticket.subject }}</td>
+                    </tr>
+                    <tr>
+                        <th>Категория:</th>
+                        <td>{{ ticket.get_category_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>Статус:</th>
+                        <td>
+                            <span class="badge {% if ticket.status == 'new' %}bg-warning{% elif ticket.status == 'in_progress' %}bg-info{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm">
+                    <tr>
+                        <th style="width: 120px;">Приоритет:</th>
+                        <td>
+                            <span class="badge {% if ticket.priority == 'high' or ticket.priority == 'urgent' %}bg-danger{% elif ticket.priority == 'medium' %}bg-warning{% else %}bg-info{% endif %}">
+                                {{ ticket.get_priority_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Создано:</th>
+                        <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Обновлено:</th>
+                        <td>{{ ticket.updated_at|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Решено:</th>
+                        <td>
+                            {% if ticket.is_resolved %}
+                                <span class="badge bg-success">Да</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Нет</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">Ваше сообщение</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ ticket.message|linebreaks }}</p>
+            </div>
+        </div>
+        
+        {% if ticket.response %}
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">Ответ администрации</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ ticket.response|linebreaks }}</p>
+                    <small class="text-muted d-block mt-2">
+                        Получен: {{ ticket.updated_at|date:"d.m.Y H:i" }}
+                    </small>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
