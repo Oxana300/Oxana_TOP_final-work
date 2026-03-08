@@ -79,4 +79,13 @@ urlpatterns = [
     # Регистрация
     path('register/', views.register_view, name='register'),     
 
+      # Профиль пользователя
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('profile/edit/', views.profile_edit, name='profile_edit'),
+    path('profile/avatar/upload/', views.profile_avatar_upload, name='profile_avatar_upload'),
+    path('profile/avatar/delete/', views.profile_avatar_delete, name='profile_avatar_delete'),
+    path('profile/orders/', views.profile_orders, name='profile_orders'),
+    path('profile/reviews/', views.profile_reviews, name='profile_reviews'),
+    path('profile/tickets/', views.profile_tickets, name='profile_tickets'),
+
 ]

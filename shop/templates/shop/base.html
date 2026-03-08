@@ -71,6 +71,50 @@
         {% endif %}
     </ul>
 
+    <!-- ОКСАНА Добавляю ссылку на профиль в меню пользователя-->
+<ul class="navbar-nav">
+    {% if user.is_authenticated %}
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+               data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle"></i> {{ user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li>
+                    <a class="dropdown-item" href="{% url 'shop:profile' %}">
+                        <i class="bi bi-person"></i> Мой профиль
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'shop:profile_orders' %}">
+                        <i class="bi bi-box"></i> Мои заказы
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'shop:profile_tickets' %}">
+                        <i class="bi bi-headset"></i> Обращения в поддержку
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">
+                            <i class="bi bi-box-arrow-right"></i> Выйти
+                        </button>
+                    </form>
+                </li>
+            </ul>
+        </li>
+    {% else %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">Войти</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'shop:register' %}">Регистрация</a>
+        </li>
+    {% endif %}
+</ul>
     <!-- Основной контент -->
     <main class="container my-4">
         {% if messages %}
@@ -95,3 +139,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+{% load static %}
+<script src="{% static 'shop/js/date-validation.js' %}"></script>

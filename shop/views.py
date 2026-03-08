@@ -18,13 +18,17 @@ from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
 
-from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment
+from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
 from .forms import (ProductReviewForm, 
                     SupportTicketForm, 
                     SupportTicketUpdateForm, 
                     SupportResponseForm, 
                     SupportTicketAttachmentForm, 
-                    UserRegistrationForm)
+                    UserRegistrationForm,
+                    UserProfileForm,
+                    UserAvatarForm,
+                    UserInfoForm
+                    )
 
 
 class HomePageView(TemplateView):
@@ -610,3 +614,130 @@ def register_view(request):
         'form': form,
         'title': 'Регистрация'
     })
+
+class ProfileView(LoginRequiredMixin, DetailView):
+    """Просмотр профиля пользователя"""
+    model = UserProfile
+    template_name = 'shop/profile/profile_detail.html'
+    context_object_name = 'profile'
+    
+    def get_object(self, queryset=None):
+        # Возвращаем профиль текущего пользователя
+        profile, created = UserProfile.objects.get_or_create(user=self.request.user)
+        return profile
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Мой профиль'
+        
+        # Получаем статистику пользователя
+        from .models import SupportTicket, ProductReview
+        
+        context['stats'] = {
+            'tickets_count': SupportTicket.objects.filter(user=self.request.user).count(),
+            'reviews_count': ProductReview.objects.filter(user=self.request.user).count(),
+            'open_tickets': SupportTicket.objects.filter(
+                user=self.request.user, 
+                status__in=['new', 'in_progress']
+            ).count(),
+        }
+        
+        return context
+
+
+@login_required
+def profile_edit(request):
+    """Редактирование профиля"""
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        user_form = UserInfoForm(request.POST, instance=request.user)
+        profile_form = UserProfileForm(request.POST, instance=profile)
+        
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.success(request, 'Профиль успешно обновлен!')
+            return redirect('shop:profile')
+    else:
+        user_form = UserInfoForm(instance=request.user)
+        profile_form = UserProfileForm(instance=profile)
+    
+    return render(request, 'shop/profile/profile_edit.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'title': 'Редактирование профиля'
+    })
+
+
+@login_required
+def profile_avatar_upload(request):
+    """Загрузка аватара"""
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        form = UserAvatarForm(request.POST, request.FILES, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Фотография профиля обновлена!')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, error)
+    else:
+        form = UserAvatarForm(instance=profile)
+    
+    return redirect('shop:profile_edit')
+
+
+@login_required
+def profile_avatar_delete(request):
+    """Удаление аватара"""
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if profile.avatar:
+        # Удаляем файл
+        profile.avatar.delete()
+        profile.avatar = None
+        profile.save()
+        messages.success(request, 'Фотография профиля удалена')
+    else:
+        messages.info(request, 'У вас нет фотографии профиля')
+    
+    return redirect('shop:profile_edit')
+
+
+@login_required
+def profile_orders(request):
+    """История заказов пользователя"""
+    # Здесь будет логика заказов
+    return render(request, 'shop/profile/profile_orders.html', {
+        'title': 'Мои заказы'
+    })
+
+
+@login_required
+def profile_reviews(request):
+    """Отзывы пользователя"""
+    from .models import ProductReview
+    
+    reviews = ProductReview.objects.filter(user=request.user).select_related('product')
+    
+    return render(request, 'shop/profile/profile_reviews.html', {
+        'reviews': reviews,
+        'title': 'Мои отзывы'
+    })
+
+
+@login_required
+def profile_tickets(request):
+    """Обращения в поддержку"""
+    from .models import SupportTicket
+    
+    tickets = SupportTicket.objects.filter(user=request.user).order_by('-created_at')
+    
+    return render(request, 'shop/profile/profile_tickets.html', {
+        'tickets': tickets,
+        'title': 'Мои обращения'
+    })
+

@@ -3,7 +3,10 @@
 """
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
+from datetime import date
+from PIL import Image
+
+import os
 
 class PublishedProductManager(models.Manager):
     """Менеджер для опубликованных товаров"""
@@ -513,3 +516,142 @@ class SupportTicketAttachment(models.Model):
         if self.file:
             return round(self.file.size / (1024 * 1024), 2)
         return 0
+    
+class UserProfile(models.Model):
+    """Профиль пользователя магазина"""
+    
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name="Пользователь",
+        related_name='profile'
+    )
+    
+    # Личная информация
+    phone = models.CharField(
+        max_length=20,
+        verbose_name="Телефон",
+        blank=True,
+        null=True
+    )
+    
+    birth_date = models.DateField(
+        verbose_name="Дата рождения",
+        blank=True,
+        null=True
+    )
+    
+    # Адрес доставки по умолчанию
+    default_address = models.TextField(
+        verbose_name="Адрес доставки",
+        blank=True,
+        null=True,
+        help_text="Адрес доставки по умолчанию"
+    )
+    
+    # Фотография профиля
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        verbose_name="Фотография профиля",
+        blank=True,
+        null=True,
+        help_text="Загрузите ваше фото (до 2 МБ, форматы: JPG, PNG)"
+    )
+    
+    # Дополнительные поля
+    bio = models.TextField(
+        verbose_name="О себе",
+        blank=True,
+        null=True,
+        max_length=500,
+        help_text="Расскажите немного о себе"
+    )
+    
+    # Настройки уведомлений
+    email_notifications = models.BooleanField(
+        verbose_name="Получать email-уведомления",
+        default=True
+    )
+    
+    # Дата регистрации профиля
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания профиля"
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата обновления"
+    )
+    
+    class Meta:
+        verbose_name = "Профиль пользователя"
+        verbose_name_plural = "Профили пользователей"
+        db_table = 'user_profiles'
+    
+    def __str__(self):
+        return f"Профиль: {self.user.username}"
+    
+    def save(self, *args, **kwargs):
+        """Переопределяем save для обработки изображения"""
+        super().save(*args, **kwargs)
+        
+        # Если загружено изображение, обрабатываем его
+        if self.avatar:
+            self.resize_avatar()
+    
+    def resize_avatar(self):
+        """Изменяет размер аватара до оптимальных размеров"""
+        try:
+            img_path = self.avatar.path
+            if os.path.exists(img_path):
+                img = Image.open(img_path)
+                
+                # Изменяем размер до 300x300, сохраняя пропорции
+                if img.height > 300 or img.width > 300:
+                    output_size = (300, 300)
+                    img.thumbnail(output_size)
+                    img.save(img_path)
+        except Exception as e:
+            print(f"Ошибка при обработке изображения: {e}")
+    
+    def avatar_url(self):
+        """Возвращает URL аватара или путь к изображению по умолчанию"""
+        if self.avatar:
+            return self.avatar.url
+        return '/static/img/default-avatar.png'
+    
+    def get_full_name_or_username(self):
+        """Возвращает полное имя или username"""
+        if self.user.get_full_name():
+            return self.user.get_full_name()
+        return self.user.username
+    
+    @property
+    def initials(self):
+        """Возвращает инициалы пользователя"""
+        name_parts = self.user.get_full_name().split()
+        if len(name_parts) >= 2:
+            return f"{name_parts[0][0]}{name_parts[1][0]}".upper()
+        elif self.user.username:
+            return self.user.username[0].upper()
+        return "U"
+    
+    @property
+    def age(self):
+        """Возвращает возраст пользователя на основе даты рождения"""
+        if self.birth_date:
+            today = date.today()
+            age = today.year - self.birth_date.year
+            # Корректировка, если день рождения еще не наступил в этом году
+            if (today.month, today.day) < (self.birth_date.month, self.birth_date.day):
+                age -= 1
+            return age
+        return None
+    
+    @property
+    def is_adult(self):
+        """Проверяет, является ли пользователь совершеннолетним"""
+        age = self.age
+        return age is not None and age >= 18
+    

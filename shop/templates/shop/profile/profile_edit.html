@@ -1,0 +1,188 @@
+<!--Шаблон редактирования профиля-->
+
+{% extends 'shop/profile/base_profile.html' %}
+
+{% block profile_content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h4 class="mb-0">Редактирование профиля</h4>
+    </div>
+    <div class="card-body">
+        <!-- Форма загрузки аватара -->
+        <div id="avatar" class="mb-4 p-3 bg-light rounded">
+            <h5 class="mb-3">Фотография профиля</h5>
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" alt="Avatar" 
+                             class="rounded-circle img-thumbnail" width="100" height="100"
+                             style="object-fit: cover;">
+                    {% else %}
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                             style="width: 100px; height: 100px; font-size: 2.5rem;">
+                            {{ profile.initials }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col">
+                    <form method="post" action="{% url 'shop:profile_avatar_upload' %}" 
+                          enctype="multipart/form-data" class="mb-2">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="file" name="avatar" class="form-control form-control-sm" 
+                                   accept="image/jpeg,image/png,image/gif" required>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                Загрузить
+                            </button>
+                        </div>
+                        <small class="text-muted">Максимальный размер: 2 МБ, форматы: JPG, PNG, GIF</small>
+                    </form>
+                    
+                    {% if profile.avatar %}
+                        <a href="{% url 'shop:profile_avatar_delete' %}" 
+                           class="btn btn-outline-danger btn-sm"
+                           onclick="return confirm('Удалить фотографию?')">
+                            <i class="bi bi-trash"></i> Удалить фото
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Форма редактирования -->
+        <form method="post">
+            {% csrf_token %}
+            
+            <h5 class="mb-3">Основная информация</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ user_form.first_name.id_for_label }}" class="form-label">
+                        {{ user_form.first_name.label }}
+                    </label>
+                    {{ user_form.first_name }}
+                    {% if user_form.first_name.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in user_form.first_name.errors %}
+                                <i class="bi bi-exclamation-circle"></i> {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">Только буквы, пробелы и дефисы</small>
+                </div>
+    
+                <div class="col-md-6 mb-3">
+                    <label for="{{ user_form.last_name.id_for_label }}" class="form-label">
+                        {{ user_form.last_name.label }}
+                    </label>
+                    {{ user_form.last_name }}
+                    {% if user_form.last_name.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in user_form.last_name.errors %}
+                                <i class="bi bi-exclamation-circle"></i> {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">Только буквы, пробелы и дефисы</small>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ user_form.email.id_for_label }}" class="form-label">
+                    {{ user_form.email.label }}
+                </label>
+                {{ user_form.email }}
+                {% if user_form.email.errors %}
+                    <div class="text-danger small">
+                        {{ user_form.email.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <hr class="my-4">
+            
+            <h5 class="mb-3">Контактная информация</h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="{{ profile_form.phone.id_for_label }}" class="form-label">
+                        {{ profile_form.phone.label }}
+                    </label>
+                    {{ profile_form.phone }}
+                    {% if profile_form.phone.errors %}
+                        <div class="text-danger small">
+                            {{ profile_form.phone.errors }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6 mb-3">
+                    <label for="{{ profile_form.birth_date.id_for_label }}" class="form-label">
+                        {{ profile_form.birth_date.label }}
+                    </label>
+                    {{ profile_form.birth_date }}
+                    {% if profile_form.birth_date.errors %}
+                        <div class="text-danger small mt-1">
+                            {% for error in profile_form.birth_date.errors %}
+                                <i class="bi bi-exclamation-circle"></i> {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle"></i> 
+                        Для регистрации необходимо быть старше 18 лет
+                    </small>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ profile_form.default_address.id_for_label }}" class="form-label">
+                    {{ profile_form.default_address.label }}
+                </label>
+                {{ profile_form.default_address }}
+                {% if profile_form.default_address.errors %}
+                    <div class="text-danger small">
+                        {{ profile_form.default_address.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-3">
+                <label for="{{ profile_form.bio.id_for_label }}" class="form-label">
+                    {{ profile_form.bio.label }}
+                </label>
+                {{ profile_form.bio }}
+                {% if profile_form.bio.errors %}
+                    <div class="text-danger small">
+                        {{ profile_form.bio.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <hr class="my-4">
+            
+            <h5 class="mb-3">Настройки</h5>
+            <div class="mb-3 form-check">
+                {{ profile_form.email_notifications }}
+                <label for="{{ profile_form.email_notifications.id_for_label }}" class="form-check-label">
+                    {{ profile_form.email_notifications.label }}
+                </label>
+                {% if profile_form.email_notifications.errors %}
+                    <div class="text-danger small">
+                        {{ profile_form.email_notifications.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <hr>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg"></i> Сохранить изменения
+                </button>
+                <a href="{% url 'shop:profile' %}" class="btn btn-outline-secondary">
+                    Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

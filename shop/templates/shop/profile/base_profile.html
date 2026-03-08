@@ -1,0 +1,88 @@
+<!--Базовый шаблон для профиля-->
+
+{% extends 'shop/base.html' %}
+
+{% block title %}{{ title }} - Профиль{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковое меню профиля -->
+    <div class="col-md-3 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center p-4">
+                <!-- Аватар -->
+                <div class="position-relative d-inline-block mb-3">
+                    {% if profile.avatar %}
+                        <img src="{{ profile.avatar.url }}" alt="{{ user.username }}" 
+                             class="rounded-circle img-thumbnail" width="120" height="120"
+                             style="object-fit: cover;">
+                    {% else %}
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto"
+                             style="width: 120px; height: 120px; font-size: 3rem;">
+                            {{ profile.initials }}
+                        </div>
+                    {% endif %}
+                    
+                    <a href="{% url 'shop:profile_edit' %}#avatar" 
+                       class="btn btn-sm btn-light rounded-circle position-absolute bottom-0 end-0"
+                       style="border: 2px solid #fff;">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </div>
+                
+                <h5 class="mb-1">{{ profile.get_full_name_or_username }}</h5>
+                <p class="text-muted small mb-3">{{ user.email }}</p>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'shop:profile' %}" 
+                       class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                        <i class="bi bi-person"></i> Общая информация
+                    </a>
+                    <a href="{% url 'shop:profile_edit' %}" 
+                       class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'profile_edit' %}active{% endif %}">
+                        <i class="bi bi-gear"></i> Редактировать
+                    </a>
+                    <a href="{% url 'shop:profile_orders' %}" 
+                       class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'profile_orders' %}active{% endif %}">
+                        <i class="bi bi-box"></i> Мои заказы
+                    </a>
+                    <a href="{% url 'shop:profile_reviews' %}" 
+                       class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'profile_reviews' %}active{% endif %}">
+                        <i class="bi bi-star"></i> Мои отзывы
+                    </a>
+                    <a href="{% url 'shop:profile_tickets' %}" 
+                       class="btn btn-outline-primary btn-sm {% if request.resolver_match.url_name == 'profile_tickets' %}active{% endif %}">
+                        <i class="bi bi-headset"></i> Обращения
+                        {% if stats.open_tickets > 0 %}
+                            <span class="badge bg-danger ms-1">{{ stats.open_tickets }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Статистика -->
+            <div class="card-footer bg-light">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <span class="d-block fw-bold">{{ stats.tickets_count|default:0 }}</span>
+                        <small class="text-muted">Обращений</small>
+                    </div>
+                    <div class="col-4">
+                        <span class="d-block fw-bold">{{ stats.reviews_count|default:0 }}</span>
+                        <small class="text-muted">Отзывов</small>
+                    </div>
+                    <div class="col-4">
+                        <span class="d-block fw-bold">{{ stats.orders_count|default:0 }}</span>
+                        <small class="text-muted">Заказов</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Контент профиля -->
+    <div class="col-md-9">
+        {% block profile_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

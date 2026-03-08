@@ -12,5 +12,5 @@ class ShopConfig(AppConfig):
     def ready(self):
         """Выполняется при запуске приложения"""
         # Здесь можно подключить сигналы, если они есть
-        # import shop.signals
-        pass
+        import shop.signals
+        

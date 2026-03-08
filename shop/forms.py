@@ -2,10 +2,12 @@
 Формы для приложения магазина
 """
 from django import forms
-from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment
+from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+
+from datetime import date
 
 import re
 
@@ -469,7 +471,7 @@ class SupportResponseForm(forms.ModelForm):
         return response
         
 class UserRegistrationForm(UserCreationForm):
-    """Форма регистрации пользователя"""
+    """Форма регистрации пользователя с расширенной валидацией"""
     
     email = forms.EmailField(
         required=True,
@@ -497,6 +499,17 @@ class UserRegistrationForm(UserCreationForm):
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Введите вашу фамилию'
+        })
+    )
+
+    # Заменяем поле age на birth_date для более точной валидации
+    birth_date = forms.DateField(
+        required=True,
+        label='Дата рождения',
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date',
+            'max': date.today().isoformat()
         })
     )
 
@@ -529,7 +542,7 @@ class UserRegistrationForm(UserCreationForm):
     
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'age', 'password1', 'password2']
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'birth_date', 'password1', 'password2']
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args,**kwargs)
@@ -573,7 +586,61 @@ class UserRegistrationForm(UserCreationForm):
             raise ValidationError("Пользователь с таким именем уже существует")
         
         return username
+
+    def clean_first_name(self):
+        """Валидация имени - только буквы"""
+        first_name = self.cleaned_data.get('first_name')
+        
+        if first_name:
+            # Проверка, что поле не пустое
+            if len(first_name.strip()) == 0:
+                raise ValidationError("Имя не может быть пустым")
+            
+            # Проверка на минимальную длину
+            if len(first_name) < 2:
+                raise ValidationError("Имя должно содержать минимум 2 символа")
+            
+            # Проверка на наличие цифр
+            if any(char.isdigit() for char in first_name):
+                raise ValidationError("Имя не должно содержать цифры")
+            
+            # Проверка на спецсимволы
+            if not first_name.replace('-', '').replace(' ', '').isalpha():
+                raise ValidationError("Имя может содержать только буквы, пробелы и дефисы")
+            
+            # Приводим к правильному формату
+            first_name = first_name.strip()
+            first_name = ' '.join(word.capitalize() for word in first_name.split())
+            
+        return first_name
     
+    def clean_last_name(self):
+        """Валидация фамилии - только буквы"""
+        last_name = self.cleaned_data.get('last_name')
+        
+        if last_name:
+            # Проверка, что поле не пустое
+            if len(last_name.strip()) == 0:
+                raise ValidationError("Фамилия не может быть пустой")
+            
+            # Проверка на минимальную длину
+            if len(last_name) < 2:
+                raise ValidationError("Фамилия должна содержать минимум 2 символа")
+            
+            # Проверка на наличие цифр
+            if any(char.isdigit() for char in last_name):
+                raise ValidationError("Фамилия не должна содержать цифры")
+            
+            # Проверка на спецсимволы
+            if not last_name.replace('-', '').replace(' ', '').isalpha():
+                raise ValidationError("Фамилия может содержать только буквы, пробелы и дефисы")
+            
+            # Приводим к правильному формату
+            last_name = last_name.strip()
+            last_name = ' '.join(word.capitalize() for word in last_name.split())
+            
+        return last_name
+
     def clean_email(self):
         """Валидация email"""
         email = self.cleaned_data.get('email')
@@ -610,14 +677,34 @@ class UserRegistrationForm(UserCreationForm):
             return cleaned_phone
         return phone
     
-    def clean_age(self):
-        """Валидация возраста"""
-        age = self.cleaned_data.get('age')
+    def clean_birth_date(self):
+        """Валидация даты рождения при регистрации"""
+        birth_date = self.cleaned_data.get('birth_date')
         
-        if age and age < 18:
-            raise ValidationError("Регистрация разрешена только пользователям старше 18 лет")
-        
-        return age
+        if birth_date:
+            today = date.today()
+            
+            # Проверка на будущую дату
+            if birth_date > today:
+                raise ValidationError("Дата рождения не может быть в будущем")
+            
+            # Расчет возраста
+            age = today.year - birth_date.year
+            if (today.month, today.day) < (birth_date.month, birth_date.day):
+                age -= 1
+            
+            # Проверка на совершеннолетие
+            if age < 18:
+                raise ValidationError(
+                    f"Регистрация разрешена только пользователям старше 18 лет. "
+                    f"Ваш возраст: {age} лет."
+                )
+            
+            # Проверка на слишком старый возраст
+            if age > 120:
+                raise ValidationError("Указан некорректный возраст")
+            
+        return birth_date
     
     def clean_password1(self):
         """Валидация пароля"""
@@ -653,3 +740,242 @@ class UserRegistrationForm(UserCreationForm):
             self.add_error('password1', "Пароль не должен содержать имя пользователя")
         
         return cleaned_data
+    
+
+class UserProfileForm(forms.ModelForm):
+    """Форма редактирования профиля пользователя"""
+    
+    class Meta:
+        model = UserProfile
+        fields = ['phone', 'birth_date', 'default_address', 'bio', 'email_notifications']
+        widgets = {
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+7 (999) 123-45-67'
+            }),
+            'birth_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'max': date.today().isoformat()  # Максимальная дата - сегодня
+            }),
+            'default_address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Введите ваш адрес'
+            }),
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Расскажите о себе...'
+            }),
+            'email_notifications': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'phone': 'Телефон',
+            'birth_date': 'Дата рождения',
+            'default_address': 'Адрес доставки',
+            'bio': 'О себе',
+            'email_notifications': 'Получать уведомления на email',
+        }
+    
+    def clean_phone(self):
+        """Валидация номера телефона"""
+        phone = self.cleaned_data.get('phone')
+        
+        if phone:
+            # Очищаем номер от лишних символов
+            cleaned_phone = re.sub(r'[^\d+]', '', phone)
+            
+            # Проверка формата
+            if not re.match(r'^\+?\d{10,15}$', cleaned_phone):
+                raise ValidationError(
+                    "Введите корректный номер телефона (10-15 цифр, может начинаться с +)"
+                )
+            
+            return cleaned_phone
+        return phone
+    def clean_birth_date(self):
+        """Валидация даты рождения"""
+        birth_date = self.cleaned_data.get('birth_date')
+        
+        if birth_date:
+            today = date.today()
+            
+            # Проверка 1: Дата рождения не может быть в будущем
+            if birth_date > today:
+                raise ValidationError("Дата рождения не может быть в будущем")
+            
+            # Проверка 2: Дата рождения не может быть слишком старой (например, > 120 лет)
+            max_age = 120
+            min_birth_date = date(today.year - max_age, today.month, today.day)
+            if birth_date < min_birth_date:
+                raise ValidationError(f"Указана слишком старая дата (максимальный возраст: {max_age} лет)")
+            
+            # Проверка 3: Проверка на совершеннолетие (18 лет)
+            age = today.year - birth_date.year
+            # Корректировка возраста, если день рождения еще не наступил в этом году
+            if (today.month, today.day) < (birth_date.month, birth_date.day):
+                age -= 1
+            
+            if age < 18:
+                raise ValidationError(
+                    f"Вам должно быть не менее 18 лет. Ваш возраст: {age} лет. "
+                    f"Регистрация разрешена только совершеннолетним пользователям."
+                )
+            
+            # Проверка 4: Дата рождения должна быть реалистичной (не сегодня и не вчера для взрослых)
+            if age == 18 and birth_date > date(today.year - 18, today.month, today.day):
+                # Проверка, что действительно исполнилось 18 лет
+                birthday_18 = date(birth_date.year + 18, birth_date.month, birth_date.day)
+                if birthday_18 > today:
+                    raise ValidationError("Вам еще нет 18 лет. Регистрация доступна с 18 лет.")
+            
+            # Проверка 5: Нельзя установить дату рождения на 1 января 1970 года (часто значение по умолчанию)
+            if birth_date == date(1970, 1, 1):
+                raise ValidationError("Пожалуйста, укажите реальную дату рождения")
+            
+        return birth_date
+
+class UserAvatarForm(forms.ModelForm):
+    """Форма для загрузки аватара"""
+    
+    class Meta:
+        model = UserProfile
+        fields = ['avatar']
+        widgets = {
+            'avatar': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/jpeg,image/png,image/gif'
+            })
+        }
+        labels = {
+            'avatar': 'Фотография профиля'
+        }
+    
+    def clean_avatar(self):
+        """Валидация загружаемого изображения"""
+        avatar = self.cleaned_data.get('avatar')
+        
+        if avatar:
+            # Проверка размера файла (макс 2 МБ)
+            if avatar.size > 2 * 1024 * 1024:
+                raise ValidationError("Размер файла не должен превышать 2 МБ")
+            
+            # Проверка типа файла
+            allowed_types = ['image/jpeg', 'image/png', 'image/gif']
+            if avatar.content_type not in allowed_types:
+                raise ValidationError("Допустимые форматы: JPG, PNG, GIF")
+        
+        return avatar
+
+
+class UserInfoForm(forms.ModelForm):
+    """Форма редактирования основной информации пользователя"""
+    
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']
+        widgets = {
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Введите имя'
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Введите фамилию'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'example@mail.com'
+            }),
+        }
+        labels = {
+            'first_name': 'Имя',
+            'last_name': 'Фамилия',
+            'email': 'Email',
+        }
+    
+    def clean_first_name(self):
+        """Валидация имени - только буквы"""
+        first_name = self.cleaned_data.get('first_name')
+        
+        if first_name:
+            # Проверка, что поле не пустое
+            if len(first_name.strip()) == 0:
+                raise ValidationError("Имя не может быть пустым")
+            
+            # Проверка на минимальную длину
+            if len(first_name) < 2:
+                raise ValidationError("Имя должно содержать минимум 2 символа")
+            
+            # Проверка на максимальную длину
+            if len(first_name) > 30:
+                raise ValidationError("Имя слишком длинное (максимум 30 символов)")
+            
+            # Проверка, что имя содержит только буквы
+            if not first_name.replace('-', '').replace(' ', '').isalpha():
+                raise ValidationError("Имя может содержать только буквы, пробелы и дефисы")
+            
+            # Проверка на наличие цифр
+            if any(char.isdigit() for char in first_name):
+                raise ValidationError("Имя не должно содержать цифры")
+            
+            # Проверка на спецсимволы (кроме дефиса)
+            allowed_chars = set('абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ- ')
+            if not all(char in allowed_chars for char in first_name):
+                raise ValidationError("Имя содержит недопустимые символы")
+            
+            # Приводим к правильному формату (первая буква заглавная, остальные строчные)
+            first_name = first_name.strip()
+            first_name = ' '.join(word.capitalize() for word in first_name.split())
+            
+        return first_name
+    
+    def clean_last_name(self):
+        """Валидация фамилии - только буквы"""
+        last_name = self.cleaned_data.get('last_name')
+        
+        if last_name:
+            # Проверка, что поле не пустое
+            if len(last_name.strip()) == 0:
+                raise ValidationError("Фамилия не может быть пустой")
+            
+            # Проверка на минимальную длину
+            if len(last_name) < 2:
+                raise ValidationError("Фамилия должна содержать минимум 2 символа")
+            
+            # Проверка на максимальную длину
+            if len(last_name) > 50:
+                raise ValidationError("Фамилия слишком длинная (максимум 50 символов)")
+            
+            # Проверка, что фамилия содержит только буквы
+            if not last_name.replace('-', '').replace(' ', '').isalpha():
+                raise ValidationError("Фамилия может содержать только буквы, пробелы и дефисы")
+            
+            # Проверка на наличие цифр
+            if any(char.isdigit() for char in last_name):
+                raise ValidationError("Фамилия не должна содержать цифры")
+            
+            # Проверка на спецсимволы (кроме дефиса)
+            allowed_chars = set('абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ- ')
+            if not all(char in allowed_chars for char in last_name):
+                raise ValidationError("Фамилия содержит недопустимые символы")
+            
+            # Приводим к правильному формату (первая буква заглавная, остальные строчные)
+            last_name = last_name.strip()
+            last_name = ' '.join(word.capitalize() for word in last_name.split())
+            
+        return last_name
+    
+    def clean_email(self):
+        """Валидация email"""
+        email = self.cleaned_data.get('email')
+        
+        # Проверка, не занят ли email другим пользователем
+        if email and self.instance.email != email:
+            if User.objects.filter(email=email).exists():
+                raise ValidationError("Этот email уже используется другим пользователем")
+        
+        return email

@@ -1,0 +1,96 @@
+<!--Шаблон просмотра профиля-->
+
+{% extends 'shop/profile/base_profile.html' %}
+
+{% block profile_content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h4 class="mb-0">Общая информация</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small mb-1">Имя пользователя</label>
+                <p class="fw-bold">{{ user.username }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small mb-1">Email</label>
+                <p class="fw-bold">{{ user.email }}</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small mb-1">Имя</label>
+                <p class="fw-bold">{{ user.first_name|default:"Не указано" }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small mb-1">Фамилия</label>
+                <p class="fw-bold">{{ user.last_name|default:"Не указано" }}</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small mb-1">Телефон</label>
+                <p class="fw-bold">{{ profile.phone|default:"Не указан" }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="text-muted small mb-1">Дата рождения</label>
+                <p class="fw-bold">
+                    {% if profile.birth_date %}
+                        {{ profile.birth_date|date:"d.m.Y" }}
+                        {% if profile.age %}
+                            <span class="badge bg-info ms-2">{{ profile.age }} лет</span>
+                        {% endif %}
+                    {% else %}
+                        Не указана
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label class="text-muted small mb-1">Адрес доставки</label>
+            <p class="fw-bold">{{ profile.default_address|default:"Не указан" }}</p>
+        </div>
+        
+        <div class="mb-3">
+            <label class="text-muted small mb-1">О себе</label>
+            <p class="fw-bold">{{ profile.bio|default:"Не заполнено"|linebreaks }}</p>
+        </div>
+        
+        <div class="mb-3">
+            <label class="text-muted small mb-1">Настройки уведомлений</label>
+            <p class="fw-bold">
+                {% if profile.email_notifications %}
+                    <span class="badge bg-success">Получать email-уведомления</span>
+                {% else %}
+                    <span class="badge bg-secondary">Не получать уведомления</span>
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="mb-3">
+            <label class="text-muted small mb-1">Дата регистрации</label>
+            <p class="fw-bold">{{ user.date_joined|date:"d.m.Y H:i" }}</p>
+        </div>
+        
+        <div class="mb-3">
+            <label class="text-muted small mb-1">Последний визит</label>
+            <p class="fw-bold">{{ user.last_login|date:"d.m.Y H:i"|default:"Никогда" }}</p>
+        </div>
+        
+        <hr>
+        
+        <div class="d-flex gap-2">
+            <a href="{% url 'shop:profile_edit' %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Редактировать профиль
+            </a>
+            <a href="{% url 'password_change' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-key"></i> Сменить пароль
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
