@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config, Csv
 
 import os
 
@@ -22,12 +23,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-35@kyke(hiyo*6*@jjxjhs2*-#f@c@bu1=ws2k-2fsh9k3rw1t'
+# SECRET_KEY = 'django-insecure-35@kyke(hiyo*6*@jjxjhs2*-#f@c@bu1=ws2k-2fsh9k3rw1t'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = config('DEBUG', default = False, cast = bool)
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default = '', cast = Csv())
 
 
 # Application definition
@@ -43,7 +47,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # безопасность (YTTPS, XSS защита)
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -78,13 +84,30 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+это заменили на следующее  для входа на продакшн
+"""
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DATABASE_NAME'),
+        'USER': config('DATABASE_USER'),
+        'PASSWORD': config('DATABASE_PASSWORD'),
+        'HOST': config('DATABASE_HOST'),
+        'PORT': config('DATABASE_PORT', default='5432'),
+        'CONN_MAX_AGE': 600,  # Кэширование соединений
+        'OPTIONS': {
+            'sslmode': 'require',  # Обязательно для Railway
+        },
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -121,16 +144,31 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifesstStaticFilesStorage'
 
-#ОКСАНА добавила
+# ОКСАНА добавила
+
 LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после входа
 LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода
 LOGIN_URL = '/accounts/login/'  # URL страницы входа
+
+# Время жизни сессии в секундах
+SESSION_COOKIE_AGE = 1209600 # две недели
+
+# Использование HTTPS для кук сессии
+SESSION_COOKIE_SECURE = False
+
+# Название кук сессии
+SESSION_COOKIE_NAME = 'sessionid'
 
 # Настройки аутентификации
 LOGIN_URL = '/login/'  # URL для входа
 LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после входа
 LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода
+
+# Доверенные источники для CSRF
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default = '', cast=Csv())
 
 # ОКСАНА добавила Настройки для медиафайлов (аватары, изображения товаров)
 MEDIA_URL = '/media/'
