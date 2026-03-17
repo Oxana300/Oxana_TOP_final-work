@@ -23,14 +23,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-35@kyke(hiyo*6*@jjxjhs2*-#f@c@bu1=ws2k-2fsh9k3rw1t'
+# SECRET_KEY = 'django-insecure-35@kyke(hiyo*6*@jjxjhs2*-#f@c@bu1=ws2k-2fsh9k3rw1t'   # (проектное значение)
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+# DEBUG = True     # (проектное значение)
 DEBUG = config('DEBUG', default = False, cast = bool)
 
-# ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []      # (проектное значение)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default = '', cast = Csv())
 
 
@@ -47,11 +47,15 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # безопасность (YTTPS, XSS защита)
+    # безопасность (HTTPS, XSS защита)
     'django.middleware.security.SecurityMiddleware',
+
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    # работа с сессии
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # общие вещи (редиректы, просмотры)
     'django.middleware.common.CommonMiddleware',
+    # защита от CRSF  атак
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -163,9 +167,9 @@ SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_NAME = 'sessionid'
 
 # Настройки аутентификации
-LOGIN_URL = '/login/'  # URL для входа
-LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после входа
-LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода
+# LOGIN_URL = '/login/'  # URL для входа
+# LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после входа
+# LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода
 
 # Доверенные источники для CSRF
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default = '', cast=Csv())
