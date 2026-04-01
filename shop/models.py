@@ -655,3 +655,367 @@ class UserProfile(models.Model):
         age = self.age
         return age is not None and age >= 18
     
+class Order(models.Model):
+    """
+    Модель заказа покупателя
+    
+    Содержит информацию о заказе:
+    - Кто заказал (пользователь)
+    - Что заказал (товары через OrderItem)
+    - Куда доставить (адрес)
+    - Статус заказа
+    - Общая сумма
+    """
+    
+    # СТАТУСЫ ЗАКАЗА
+    STATUS_CHOICES = [
+        ('new', '🆕 Новый'),
+        ('processing', '🔄 В обработке'),
+        ('paid', '💳 Оплачен'),
+        ('shipped', '📦 Отправлен'),
+        ('delivered', '✅ Доставлен'),
+        ('cancelled', '❌ Отменён'),
+    ]
+    
+    # СПОСОБЫ ОПЛАТЫ
+    PAYMENT_CHOICES = [
+        ('card', '💳 Банковская карта'),
+        ('cash', '💵 Наличные'),
+        ('online', '🌐 Онлайн оплата'),
+    ]
+    
+    # СПОСОБЫ ДОСТАВКИ
+    DELIVERY_CHOICES = [
+        ('pickup', '🏪 Самовывоз'),
+        ('courier', '🚚 Курьер'),
+        ('post', '📮 Почта'),
+        ('cdek', '📦 CDEK'),
+    ]
+    
+    # ===== СВЯЗЬ С ПОЛЬЗОВАТЕЛЕМ =====
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='orders',
+        verbose_name="Пользователь",
+        null=True,
+        blank=True
+    )
+    
+    # ===== КОНТАКТНЫЕ ДАННЫЕ (для гостей) =====
+    email = models.EmailField(
+        verbose_name="Email",
+        help_text="Для связи и уведомлений"
+    )
+    
+    phone = models.CharField(
+        max_length=20,
+        verbose_name="Телефон",
+        help_text="Формат: +7 (XXX) XXX-XX-XX"
+    )
+    
+    # ===== АДРЕС ДОСТАВКИ =====
+    address = models.TextField(
+        verbose_name="Адрес доставки",
+        help_text="Город, улица, дом, квартира"
+    )
+    
+    city = models.CharField(
+        max_length=100,
+        verbose_name="Город"
+    )
+    
+    postal_code = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="Почтовый индекс"
+    )
+    
+    # ===== ДЕТАЛИ ЗАКАЗА =====
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='new',
+        verbose_name="Статус"
+    )
+    
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_CHOICES,
+        default='card',
+        verbose_name="Способ оплаты"
+    )
+    
+    delivery_method = models.CharField(
+        max_length=20,
+        choices=DELIVERY_CHOICES,
+        default='courier',
+        verbose_name="Способ доставки"
+    )
+    
+    # ===== ЦЕНЫ =====
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Общая сумма"
+    )
+    
+    discount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Скидка"
+    )
+    
+    final_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Итоговая сумма"
+    )
+    
+    # ===== КОММЕНТАРИИ =====
+    comment = models.TextField(
+        blank=True,
+        verbose_name="Комментарий к заказу",
+        help_text="Пожелания к доставке"
+    )
+    
+    # ===== ДАТЫ =====
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания"
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата обновления"
+    )
+    
+    paid_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Дата оплаты"
+    )
+    
+    shipped_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Дата отправки"
+    )
+    
+    delivered_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Дата доставки"
+    )
+    
+    # ===== TRACKING =====
+    tracking_number = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Трекинг номер"
+    )
+    
+    class Meta:
+        verbose_name = "Заказ"
+        verbose_name_plural = "Заказы"
+        ordering = ['-created_at']
+        db_table = 'orders'
+        indexes = [
+            models.Index(fields=['status'], name='order_status_idx'),
+            models.Index(fields=['user'], name='order_user_idx'),
+            models.Index(fields=['created_at'], name='order_created_idx'),
+        ]
+    
+    def __str__(self):
+        return f"Заказ #{self.id} от {self.email}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Автоматически рассчитывает итоговую сумму
+        """
+        # Считаем сумму товаров
+        self.total_price = sum(item.get_subtotal() for item in self.items.all())
+        
+        # Применяем скидку
+        self.final_price = self.total_price - self.discount
+        
+        super().save(*args, **kwargs)
+    
+    def get_status_display_emoji(self):
+        """Возвращает эмодзи статуса"""
+        emoji_map = {
+            'new': '🆕',
+            'processing': '🔄',
+            'paid': '💳',
+            'shipped': '📦',
+            'delivered': '✅',
+            'cancelled': '❌',
+        }
+        return emoji_map.get(self.status, '📦')
+    
+    def items_count(self):
+        """Возвращает количество товаров в заказе"""
+        return sum(item.quantity for item in self.items.all())
+    
+    items_count.short_description = "Количество товаров"
+
+
+class OrderItem(models.Model):
+    """
+    Позиция заказа (товар в заказе)
+    
+    Связывает заказ с конкретными товарами
+    Один заказ может содержать много позиций (OrderItem)
+    """
+    
+    order = models.ForeignKey(
+        Order,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name="Заказ"
+    )
+    
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        verbose_name="Товар"
+    )
+    
+    quantity = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Количество"
+    )
+    
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Цена за единицу",
+        help_text="Цена на момент заказа"
+    )
+    
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Сумма позиции",
+        editable=False
+    )
+    
+    class Meta:
+        verbose_name = "Позиция заказа"
+        verbose_name_plural = "Позиции заказов"
+        db_table = 'order_items'
+        unique_together = ['order', 'product']
+    
+    def __str__(self):
+        return f"{self.product.name} × {self.quantity}"
+    
+    def save(self, *args, **kwargs):
+        """
+        Автоматически рассчитывает сумму позиции
+        """
+        self.subtotal = self.price * self.quantity
+        super().save(*args, **kwargs)
+    
+    def get_subtotal(self):
+        """Возвращает сумму позиции"""
+        return self.subtotal
+
+
+class Cart(models.Model):
+    """
+    Корзина покупателя
+    
+    Хранит товары до оформления заказа
+    Может быть привязана к пользователю или сессии
+    """
+    
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name="Пользователь"
+    )
+    
+    session_key = models.CharField(
+        max_length=40,
+        blank=True,
+        verbose_name="Ключ сессии"
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Дата создания"
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Дата обновления"
+    )
+    
+    class Meta:
+        verbose_name = "Корзина"
+        verbose_name_plural = "Корзины"
+        db_table = 'carts'
+    
+    def __str__(self):
+        if self.user:
+            return f"Корзина {self.user.username}"
+        return f"Корзина (сессия: {self.session_key[:8]}...)"
+    
+    def get_total_items(self):
+        """Общее количество товаров в корзине"""
+        return sum(item.quantity for item in self.items.all())
+    
+    def get_total_price(self):
+        """Общая сумма корзины"""
+        return sum(item.get_subtotal() for item in self.items.all())
+    
+    def clear(self):
+        """Очистить корзину"""
+        self.items.all().delete()    
+
+
+class CartItem(models.Model):
+    """
+    Товар в корзине
+    """
+    
+    cart = models.ForeignKey(
+        Cart,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name="Корзина"
+    )
+    
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        verbose_name="Товар"
+    )
+    
+    quantity = models.PositiveIntegerField(
+        default=1,
+        verbose_name="Количество"
+    )
+    
+    added_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Добавлен"
+    )
+    
+    class Meta:
+        verbose_name = "Товар в корзине"
+        verbose_name_plural = "Товары в корзине"
+        db_table = 'cart_items'
+        unique_together = ['cart', 'product']
+    
+    def __str__(self):
+        return f"{self.product.name} × {self.quantity}"
+    
+    def get_subtotal(self):
+        """Сумма позиции"""
+        return self.product.get_final_price() * self.quantity

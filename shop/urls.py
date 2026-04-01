@@ -1,8 +1,9 @@
 """
 URL конфигурация для приложения shop
 """
-from django.urls import path
+from django.urls import path, include
 from django.contrib.auth import views as auth_views
+
 from . import views
 
 app_name = 'shop'
@@ -87,5 +88,6 @@ urlpatterns = [
     path('profile/orders/', views.profile_orders, name='profile_orders'),
     path('profile/reviews/', views.profile_reviews, name='profile_reviews'),
     path('profile/tickets/', views.profile_tickets, name='profile_tickets'),
+    path('telegram/', include('telegram_bot.urls', namespace='telegram_bot')),
 
 ]

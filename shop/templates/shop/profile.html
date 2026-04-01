@@ -1,0 +1,162 @@
+<!-- shop/templates/shop/profile.html -->
+{% extends 'shop/base.html' %}
+
+{% block title %}{{ title }} - Магазин{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Левая колонка: Информация о пользователе -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <!-- Аватар (заглушка) -->
+                <div class="mb-3">
+                    <div class="rounded-circle bg-primary d-inline-flex 
+                                align-items-center justify-content-center"
+                         style="width: 120px; height: 120px; font-size: 3rem;">
+                        <i class="bi bi-person text-white"></i>
+                    </div>
+                </div>
+                
+                <!-- Имя пользователя -->
+                <h4 class="mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                <p class="text-muted mb-3">@{{ user.username }}</p>
+                
+                <!-- Email -->
+                <p class="mb-3">
+                    <i class="bi bi-envelope text-muted"></i>
+                    {{ user.email }}
+                </p>
+                
+                <!-- Кнопки действий -->
+                <div class="d-grid gap-2">
+                    <a href="{% url 'shop:profile_edit' %}" 
+                       class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i> Редактировать профиль
+                    </a>
+                    {% if user.telegram_profile %}
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-telegram"></i> 
+                        Telegram привязан: @{{ user.telegram_profile.username }}
+                    </div>
+                    <a href="{% url 'telegram_bot:telegram_linked' %}" 
+                    class="btn btn-outline-success">
+                        <i class="bi bi-telegram"></i> Управление Telegram
+                    </a>
+                {% else %}
+                    <a href="{% url 'telegram_bot:link_telegram' %}" 
+                    class="btn btn-outline-primary">
+                        <i class="bi bi-telegram"></i> Привязать Telegram
+                    </a>
+                {% endif %}
+                    <a href="{% url 'shop:password_change' %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-key"></i> Сменить пароль
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Статистика -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Статистика</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <h3 class="text-primary">{{ reviews_count }}</h3>
+                        <p class="small text-muted mb-0">Отзывов</p>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <h3 class="text-success">{{ tickets_count }}</h3>
+                        <p class="small text-muted mb-0">Обращений</p>
+                    </div>
+                </div>
+                <hr>
+                <p class="small mb-1">
+                    <i class="bi bi-calendar"></i> 
+                    Регистрация: {{ date_joined }}
+                </p>
+                <p class="small mb-0">
+                    <i class="bi bi-clock"></i> 
+                    Последний вход: {{ last_login }}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Правая колонка: Детали -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-badge"></i> Информация профиля</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Имя</label>
+                        <p class="mb-0">{{ user.first_name|default:"Не указано" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Фамилия</label>
+                        <p class="mb-0">{{ user.last_name|default:"Не указано" }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Логин</label>
+                        <p class="mb-0">{{ user.username }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Email</label>
+                        <p class="mb-0">{{ user.email }}</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Статус аккаунта</label>
+                        <p class="mb-0">
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Активен</span>
+                            {% else %}
+                                <span class="badge bg-danger">Заблокирован</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Права доступа</label>
+                        <p class="mb-0">
+                            {% if user.is_staff %}
+                                <span class="badge bg-primary">Персонал</span>
+                            {% endif %}
+                            {% if user.is_superuser %}
+                                <span class="badge bg-danger">Администратор</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Пользователь</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Последние заказы (заглушка) -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-bag"></i> Мои заказы</h5>
+                <a href="#" class="btn btn-sm btn-outline-primary">Все заказы</a>
+            </div>
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox display-4 text-muted"></i>
+                <p class="mt-3 text-muted">У вас пока нет заказов</p>
+                <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
+                    <i class="bi bi-shop"></i> Перейти к покупкам
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

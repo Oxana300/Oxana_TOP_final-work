@@ -10,7 +10,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count, Avg
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib import messages
 from django.http import JsonResponse
 from django.core.mail import send_mail
@@ -612,7 +612,8 @@ def register_view(request):
     
     return render(request, 'shop/register.html', {
         'form': form,
-        'title': 'Регистрация'
+        'title': 'Регистрация',
+        'page_type': 'auth'
     })
 
 class ProfileView(LoginRequiredMixin, DetailView):
@@ -741,3 +742,35 @@ def profile_tickets(request):
         'title': 'Мои обращения'
     })
 
+# ручная пагинация
+def product_list_fbv(request):
+    """
+    Список товаров с ручной пагинацией
+    """
+    # Получаем все товары
+    products = Product.objects.filter(status='published').order_by('-created_at')
+    # Создаем пагинатор
+    # products - queryset 
+    # 12 - количество товаров на одной странице
+    paginator = Paginator(products,12)
+    # Получаем номер из GET параметра (?page=2)
+    page_number = request.GET.get('page')
+
+    try:
+        # Получаем объекты для текущей страницы
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        # Если номер страницы не число - показываем первую
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        # Если страницы не существует - показываем последнюю
+        page_obj = paginator.page(paginator.num_pages)
+    
+    context= {
+        'page_obj': page_obj,
+        'paginator': paginator,
+        'is_paginated': page_obj.has_other_pages(), #Есть ли другие объекты
+        'title': 'Каталог товаров',
+
+    }
+    return render(request, 'shop/product_list.html', context)

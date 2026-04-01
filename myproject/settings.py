@@ -27,11 +27,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True     # (проектное значение)
-DEBUG = config('DEBUG', default = False, cast = bool)
+DEBUG = True     # (проектное значение)
+# DEBUG = config('DEBUG', default = False, cast = bool)
 
-# ALLOWED_HOSTS = []      # (проектное значение)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default = '', cast = Csv())
+ALLOWED_HOSTS = []      # (проектное значение)
+# ALLOWED_HOSTS = config('ALLOWED_HOSTS', default = '', cast = Csv())
 
 
 # Application definition
@@ -44,22 +44,28 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'shop',
+    'telegram_bot',
 ]
 
 MIDDLEWARE = [
     # безопасность (HTTPS, XSS защита)
     'django.middleware.security.SecurityMiddleware',
 
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    # работа с сессии
+    # коммент ВРЕМЕННО для проверки 'whitenoise.middleware.WhiteNoiseMiddleware',
+    # работа с сессиями
     'django.contrib.sessions.middleware.SessionMiddleware',
     # общие вещи (редиректы, просмотры)
     'django.middleware.common.CommonMiddleware',
     # защита от CRSF  атак
     'django.middleware.csrf.CsrfViewMiddleware',
+    # аутентификация пользователя
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+     # система сообщений
     'django.contrib.messages.middleware.MessageMiddleware',
+    # защита от clickjacking атак
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Кастомные middleware
+    'shop.middleware.RequestLoggingMiddleware',
 ]
 
 ROOT_URLCONF = 'myproject.urls'
@@ -75,6 +81,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.debug',
+
                 'shop.context_processors.shop_context',
                 'shop.context_processors.support_context',
             ],
@@ -88,30 +95,36 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-"""
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-это заменили на следующее  для входа на продакшн
-"""
+#это заменили на следующее  для входа с локального сервера на продакшн
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASSWORD', default = ''),
-        'HOST': config('DATABASE_HOST'),
-        'PORT': config('DATABASE_PORT', default='5432'),
-        'CONN_MAX_AGE': 600,  # Кэширование соединений
-        'OPTIONS': {
-            'sslmode': 'require',  # Обязательно для Railway
-        },
-    }
-}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': config('DATABASE_NAME'),
+#        'USER': config('DATABASE_USER'),
+#        'PASSWORD': config('DATABASE_PASSWORD', default = ''),
+#        'HOST': config('DATABASE_HOST'),
+#        'PORT': config('DATABASE_PORT', default='5432'),
+#        'CONN_MAX_AGE': 600,  # Кэширование соединений
+#        'OPTIONS': {
+#            'sslmode': 'require',  # Обязательно для Railway
+#        },
+#    }
+#}
+
+# В ТЕРМИНАЛЕ:
+# python manage.py makemigrations
+# python manage.py migrate
+# python manage.py makemigrations telegram_bot
+# python manage.py migrate
+
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -149,7 +162,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifesstStaticFilesStorage'
+# # коммент ВРЕМЕННО для проверки STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ОКСАНА добавила
 
@@ -160,7 +173,7 @@ LOGIN_URL = '/accounts/login/'  # URL страницы входа
 # Время жизни сессии в секундах
 SESSION_COOKIE_AGE = 1209600 # две недели
 
-# Использование HTTPS для кук сессии
+# Использование HTTPS для кук сессии (В продакшене True)
 SESSION_COOKIE_SECURE = False
 
 # Название кук сессии
@@ -177,3 +190,8 @@ CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default = '', cast=Csv())
 # ОКСАНА добавила Настройки для медиафайлов (аватары, изображения товаров)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# TELEGRAM_BOT
+TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
+TELEGRAM_ADMIN_IDS = config('TELEGRAM_ADMIN_IDS', default='', cast=Csv())
+
