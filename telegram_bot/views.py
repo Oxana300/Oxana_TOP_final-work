@@ -1,11 +1,9 @@
-# telegram_bot/views.py (создайте новый файл)
-
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from .models import TelegramLinkCode, TelegramUser
-
+from decouple import config
 
 @login_required
 def link_telegram_view(request):
@@ -34,7 +32,7 @@ def link_telegram_view(request):
     context = {
         'code': active_code.code,
         'expires_at': active_code.expires_at,
-        'bot_username': config('TELEGRAM_BOT_USERNAME', default='myshop_bot'),  # Замените на ваш юзернейм бота
+        'bot_username': config('TELEGRAM_BOT_USERNAME', default='myshop_bot'), 
     }
     
     return render(request, 'telegram_bot/link_telegram.html', context)

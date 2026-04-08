@@ -31,3 +31,6 @@ media/
 
 # Логи
 *.log
+
+# Railway
+Procfile.worker

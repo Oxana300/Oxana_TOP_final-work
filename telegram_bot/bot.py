@@ -1,5 +1,20 @@
 import asyncio
 import logging
+
+import os
+import sys
+
+
+# Настройка Бота для работы моделями django
+app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if app_root not in sys.path:
+    sys.path.insert(0, app_root)
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.setting')
+
+import django
+django.setup()
+
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
@@ -92,7 +107,7 @@ async def cmd_help(message: types.Message):
         '📦 Статус заказа - Проверить заказ\n'
         '👤 Мой профиль - Информация о вас\n\n'
         '<b>Нужна помощь?</b>\n'
-        'Напишите нам: support@example.com'
+        'Напишите нам: zaykova-oxana@yandex.ru'
     )
     
     await message.answer(
@@ -330,7 +345,63 @@ async def echo_handler(message:types.Message):
         reply_to = message.message_id,
         reply_markup=get_main_keyboard()
     )
+
+@dp.message()
+async def echo_handler(message: types.Message):
+    """
+    Обработчик всех остальных сообщений
+    """
+    # Если данные из WebApp
+    if message.web_app_data:
+        await message.answer(
+            f'✅ Данные получены!\n\n'
+            f'<code>{message.web_app_data.data}</code>',
+            parse_mode=ParseMode.HTML
+        )
+        return
     
+    # Проверяем не код ли привязки (если нет команды /link)
+    if message.text and message.text.upper().startswith('TG-'):
+        # Автоматически пытаемся привязать
+        from telegram_bot.models import TelegramLinkCode, TelegramUser
+        from django.utils import timezone
+        
+        code = message.text.upper().strip()
+        
+        try:
+            link_code = TelegramLinkCode.objects.get(code=code)
+            
+            if link_code.is_valid():
+                # Привязываем
+                telegram_user, created = TelegramUser.get_or_create_from_telegram(message.from_user)
+                telegram_user.user = link_code.user
+                telegram_user.save()
+                
+                link_code.status = 'confirmed'
+                link_code.telegram_id = message.from_user.id
+                link_code.confirmed_at = timezone.now()
+                link_code.save()
+                
+                await message.answer(
+                    f"🎉 <b>Аккаунты успешно привязаны!</b>\n\n"
+                    f"👤 <b>Ваш аккаунт:</b> {link_code.user.username}\n\n"
+                    f"Теперь вы будете получать уведомления о заказах!",
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=get_main_keyboard()
+                )
+                return
+        except:
+            pass
+    
+    # Обычное сообщение - эхо
+    await message.answer(
+        f'💬 Вы написали: <b>{message.text}</b>\n\n'
+        f'Используйте кнопки внизу для навигации 👇',
+        parse_mode=ParseMode.HTML,
+        reply_to=message.message_id,
+        reply_markup=get_main_keyboard()
+    )
+
 async def main():
     """
     Главная функция запуска бота

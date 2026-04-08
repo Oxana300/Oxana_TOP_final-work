@@ -27,11 +27,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True     # (проектное значение)
-# DEBUG = config('DEBUG', default = False, cast = bool)
+# DEBUG = True     # (проектное значение)
+DEBUG = config('DEBUG', default = False, cast = bool)
 
-ALLOWED_HOSTS = []      # (проектное значение)
-# ALLOWED_HOSTS = config('ALLOWED_HOSTS', default = '', cast = Csv())
+# ALLOWED_HOSTS = []      # (проектное значение)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default = '', cast = Csv())
 
 
 # Application definition
@@ -51,7 +51,8 @@ MIDDLEWARE = [
     # безопасность (HTTPS, XSS защита)
     'django.middleware.security.SecurityMiddleware',
 
-    # коммент ВРЕМЕННО для проверки 'whitenoise.middleware.WhiteNoiseMiddleware',
+    # коммент ВРЕМЕННО для проверки удаляю (не всегда работает с whitenoise)
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     # работа с сессиями
     'django.contrib.sessions.middleware.SessionMiddleware',
     # общие вещи (редиректы, просмотры)
@@ -95,35 +96,31 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+"""
 #это заменили на следующее  для входа с локального сервера на продакшн
 
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': config('DATABASE_NAME'),
-#        'USER': config('DATABASE_USER'),
-#        'PASSWORD': config('DATABASE_PASSWORD', default = ''),
-#        'HOST': config('DATABASE_HOST'),
-#        'PORT': config('DATABASE_PORT', default='5432'),
-#        'CONN_MAX_AGE': 600,  # Кэширование соединений
-#        'OPTIONS': {
-#            'sslmode': 'require',  # Обязательно для Railway
-#        },
-#    }
-#}
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config('DATABASE_NAME'),
+        'USER': config('DATABASE_USER'),
+        'PASSWORD': config('DATABASE_PASSWORD', default = ''),
+        'HOST': config('DATABASE_HOST'),
+        'PORT': config('DATABASE_PORT', default='5432'),
+        'CONN_MAX_AGE': 600,  # Кэширование соединений
+        'OPTIONS': {
+            'sslmode': 'require',  # Обязательно для Railway
+        },
+    }
+}
 
-# В ТЕРМИНАЛЕ:
-# python manage.py makemigrations
-# python manage.py migrate
-# python manage.py makemigrations telegram_bot
-# python manage.py migrate
 
 
 # Password validation
@@ -162,7 +159,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-# # коммент ВРЕМЕННО для проверки STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# # коммент ВРЕМЕННО для проверки убираю следующее:
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ОКСАНА добавила
 
@@ -193,5 +191,15 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # TELEGRAM_BOT
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
+TELEGRAN_BOT_USERNAME = config('TELEGRAN_BOT_USERNAME', default='')
 TELEGRAM_ADMIN_IDS = config('TELEGRAM_ADMIN_IDS', default='', cast=Csv())
 
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# В ТЕРМИНАЛЕ:
+# python manage.py makemigrations
+# python manage.py migrate
+# python manage.py makemigrations telegram_bot
+# python manage.py migrate
