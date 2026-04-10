@@ -10,7 +10,7 @@ app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if app_root not in sys.path:
     sys.path.insert(0, app_root)
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.setting')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
 
 import django
 django.setup()
@@ -117,56 +117,63 @@ async def cmd_help(message: types.Message):
     )
     
 @dp.message(Command('status'))
-async def cmd_status(message:types.Message):
-    """
-    Обработчик команды статус
-    Показывает статус последнего заказа пользователя
-    """
+async def cmd_status(message: types.Message):
+    """Обработчик команды статус"""
     from telegram_bot.models import TelegramUser
     from shop.models import Order
     
-    # Получаем Telegram пользователя
     try:
-        tg_user = TelegramUser.objects.get(telegram_id = message.from_user.id)
+        tg_user = TelegramUser.objects.get(telegram_id=message.from_user.id)
     except TelegramUser.DoesNotExist:
-        await message.answer("Нажмите /start для регистрации")
-        return
-    # Проверяем есть Django пользователь у этого telegram пользователя
-    if not tg_user.user:
         await message.answer(
-            "Ваш телеграм еще не привязан к аккаунту!\n\n"
-            "Зайдите на сайт и привяжите аккаунт в личном кабинете."
-            )
-        return
-    # Ищем последний заказ пользователя
-    order = Order.objects.filter(user=tg_user.user).order_by('-created_at').first()
-    if not order:
-        await message.answer("У вас пока нет заказов")
+            "❌ Вы не зарегистрированы в боте.\n"
+            "Нажмите /start для регистрации"
+        )
         return
     
-    # Статусы - emoji
+    if not tg_user.user:
+        await message.answer(
+            "🔗 Ваш Telegram не привязан к аккаунту!\n\n"
+            "1. Зайдите на сайт\n"
+            "2. Перейдите в профиль\n"
+            "3. Нажмите 'Привязать Telegram'\n"
+            "4. Отправьте полученный код боту командой:\n"
+            f"<code>/link КОД</code>",
+            parse_mode=ParseMode.HTML
+        )
+        return
+    
+    order = Order.objects.filter(user=tg_user.user).order_by('-created_at').first()
+    if not order:
+        await message.answer("📭 У вас пока нет заказов")
+        return
+    
+    # Исправленный вывод статуса
     status_emoji = {
         'new': '🆕',
         'processing': '🔄',
+        'paid': '💳',
         'shipped': '📦',
         'delivered': '✅',
         'cancelled': '❌',
     }
     
+    status_text = dict(Order.STATUS_CHOICES).get(order.status, order.status)
+    
     text = (
-        f'<b> Статус заказа# {order.id}</b>\n\n'
-        f'{status_emoji.get(order.status)} <b> Статус:</b> {order.get_status_display_emoji()}\n'
-        f'<b>Сумма:</b> {order.total_price} руб\n'
-        f'<b>Дата создания:</b> {order.created_at.strftime("%d.%m.%Y %H:%M")}\n'
-        f'<b>Адрес: </b> {order.address}\n\n'
-        f'<i>Детали заказа доступны на сайте</i>'
+        f'<b>📦 Заказ #{order.id}</b>\n\n'
+        f'{status_emoji.get(order.status, "📦")} <b>Статус:</b> {status_text}\n'
+        f'💰 <b>Сумма:</b> {order.total_price} руб\n'
+        f'📅 <b>Дата:</b> {order.created_at.strftime("%d.%m.%Y %H:%M")}\n'
+        f'📍 <b>Адрес:</b> {order.address}\n\n'
+        f'🔍 Детали заказа доступны на сайте'
     )
     
     await message.answer(
-        text,
-        parse_mode=ParseMode.HTML,
+        text, 
+        parse_mode=ParseMode.HTML, 
         reply_markup=get_main_keyboard()
-    )
+        )
     
         
 @dp.message(Command('profile'))
@@ -346,61 +353,7 @@ async def echo_handler(message:types.Message):
         reply_markup=get_main_keyboard()
     )
 
-@dp.message()
-async def echo_handler(message: types.Message):
-    """
-    Обработчик всех остальных сообщений
-    """
-    # Если данные из WebApp
-    if message.web_app_data:
-        await message.answer(
-            f'✅ Данные получены!\n\n'
-            f'<code>{message.web_app_data.data}</code>',
-            parse_mode=ParseMode.HTML
-        )
-        return
-    
-    # Проверяем не код ли привязки (если нет команды /link)
-    if message.text and message.text.upper().startswith('TG-'):
-        # Автоматически пытаемся привязать
-        from telegram_bot.models import TelegramLinkCode, TelegramUser
-        from django.utils import timezone
-        
-        code = message.text.upper().strip()
-        
-        try:
-            link_code = TelegramLinkCode.objects.get(code=code)
-            
-            if link_code.is_valid():
-                # Привязываем
-                telegram_user, created = TelegramUser.get_or_create_from_telegram(message.from_user)
-                telegram_user.user = link_code.user
-                telegram_user.save()
-                
-                link_code.status = 'confirmed'
-                link_code.telegram_id = message.from_user.id
-                link_code.confirmed_at = timezone.now()
-                link_code.save()
-                
-                await message.answer(
-                    f"🎉 <b>Аккаунты успешно привязаны!</b>\n\n"
-                    f"👤 <b>Ваш аккаунт:</b> {link_code.user.username}\n\n"
-                    f"Теперь вы будете получать уведомления о заказах!",
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=get_main_keyboard()
-                )
-                return
-        except:
-            pass
-    
-    # Обычное сообщение - эхо
-    await message.answer(
-        f'💬 Вы написали: <b>{message.text}</b>\n\n'
-        f'Используйте кнопки внизу для навигации 👇',
-        parse_mode=ParseMode.HTML,
-        reply_to=message.message_id,
-        reply_markup=get_main_keyboard()
-    )
+
 
 async def main():
     """

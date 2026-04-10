@@ -40,20 +40,21 @@ def link_telegram_view(request):
 
 @login_required
 def telegram_linked_view(request):
-    """
-    Страница успешной привязки
-    """
+    """Страница успешной привязки"""
     try:
         telegram_profile = request.user.telegram_profile
+        if not telegram_profile.user:  # Проверяем, что привязан
+            return redirect('telegram_bot:link_telegram')
+            
         context = {
-            'telegram_username': telegram_profile.username,
+            'telegram_username': telegram_profile.username or 'не указан',
             'telegram_id': telegram_profile.telegram_id,
         }
         return render(request, 'telegram_bot/telegram_linked.html', context)
-    except:
+    except (TelegramUser.DoesNotExist, AttributeError):
+        messages.info(request, 'Telegram аккаунт не привязан')
         return redirect('telegram_bot:link_telegram')
-
-
+    
 @login_required
 def unlink_telegram_view(request):
     """

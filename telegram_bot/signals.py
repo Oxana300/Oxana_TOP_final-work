@@ -26,9 +26,8 @@ def order_created_signal(sender,instance,created, **kwargs):
     
     else:
         # Заказ обновился - проверяем статус
-        if hasattr(instance, '_old_status'):
-            if instance._old_status != instance.status:
-                # Статус изменился - уведомляем пользователя
+        if instance.pk:
+            old_order = Order.objects.get(pk=instance.pk)
+            if old_order.status != instance.status:
                 if instance.user:
                     notify_user_about_order_status(instance.user, instance)
-            

@@ -2,6 +2,7 @@
 import re
 from django.utils.html import strip_tags, escape
 
+
 def sanitize_text(text, max_length=1000, allow_html=False):
     """
     Очищает текст от опасных символов и XSS-атак
