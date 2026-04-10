@@ -307,7 +307,7 @@ class SupportTicketForm(forms.ModelForm):
             raise ValidationError("Email адреса не совпадают!")
         return email_confirm
         
-    def cleaned_subject(self):
+    def clean_subject(self):
         """Валидация темы обращения"""
         subject = self.cleaned_data.get('subject')
 

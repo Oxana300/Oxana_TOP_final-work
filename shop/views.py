@@ -1,11 +1,11 @@
 """
 Представления для приложения магазина
 """
+import logging
 from django.db import models
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic.base import TemplateView
-from django.views.generic.edit import FormView
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
@@ -17,6 +17,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
+from django.utils.html import strip_tags  # ✅ Добавлен импорт
 
 from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
 from .forms import (ProductReviewForm, 
@@ -30,6 +31,21 @@ from .forms import (ProductReviewForm,
                     UserInfoForm
                     )
 
+# ✅ Инициализация логгера
+logger = logging.getLogger(__name__)
+
+from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
+from .forms import (ProductReviewForm, 
+                    SupportTicketForm, 
+                    SupportTicketUpdateForm, 
+                    SupportResponseForm, 
+                    SupportTicketAttachmentForm, 
+                    UserRegistrationForm,
+                    UserProfileForm,
+                    UserAvatarForm,
+                    UserInfoForm
+                    )
+from .utils import sanitize_text
 
 class HomePageView(TemplateView):
     """Главная страница магазина"""
@@ -332,22 +348,27 @@ class TicketCreateView(CreateView):
             
         ticket = form.save()
         
-        # Отправляем уведомление администраторам (опционально)
+        # ✅ Очищаем данные от XSS перед отправкой email
+        safe_subject = strip_tags(ticket.subject)
+        safe_message = strip_tags(ticket.message)
+        
+        # Отправляем уведомление администраторам
         try:
             send_mail(
-                subject=f'Новое обращение #{ticket.id}: {ticket.subject}',
-                message=f'Категория: {ticket.get_category_display()}\n\n{ticket.message}',
+                subject=f'Новое обращение #{ticket.id}: {safe_subject}',
+                message=f'Категория: {ticket.get_category_display()}\n\n{safe_message}',
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[admin[1] for admin in settings.ADMINS],
                 fail_silently=True,
             )
-        except:
-            pass
+            logger.info(f"Email notification sent for ticket #{ticket.id}")
+        except Exception as e:
+            logger.error(f"Failed to send email for ticket #{ticket.id}: {str(e)}")
 
         # Добавляем сообщение об успехе
         messages.success(
             self.request,
-            f'Обращение #{ticket.id} успешно создано!'
+            f'Обращение #{ticket.id} успешно создано! '
             f'Мы ответим вам в течение 3 рабочих дней'
         )
         
@@ -492,6 +513,30 @@ class AdminResponseView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         messages.success(self.request, 'Ответ сохранен')
         return super().form_valid(form)
     
+    def form_valid(self, form):
+        ticket = form.save(commit=False)
+        
+        if form.cleaned_data.get('send_notification') and ticket.is_public:
+            try:
+                # Очищаем ответ администратора перед отправкой
+                safe_response = sanitize_text(ticket.response, 2000)
+                
+                send_mail(
+                    subject=f'Ответ на ваше обращение #{ticket.id}',
+                    message=f'Здравствуйте!\n\n{safe_response}\n\nС уважением, администрация магазина.',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[ticket.email],
+                    fail_silently=False,
+                )
+                logger.info(f"Response email sent for ticket #{ticket.id}")
+                messages.success(self.request, 'Ответ отправлен пользователю на email')
+            except Exception as e:
+                logger.error(f"Failed to send response email for ticket #{ticket.id}: {str(e)}")
+                messages.warning(self.request, f'Ошибка отправки email: {str(e)}')
+        
+        ticket.save()
+        messages.success(self.request, 'Ответ сохранен')
+        return super().form_valid(form)
     
 class AdminTicketListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     """Список всех обращений в админ панели"""

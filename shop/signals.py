@@ -18,3 +18,10 @@ def save_user_profile(sender, instance, **kwargs):
         instance.profile.save()
     except UserProfile.DoesNotExist:
         UserProfile.objects.create(user=instance)
+
+@receiver(post_delete, sender=UserProfile)
+        
+def delete_avatar_on_delete(sender, instance, **kwargs):
+    """удаление файла аватара при удалении пользователя"""
+    if instance.avatar:
+        instance.avatar.delete(False)

@@ -2,7 +2,7 @@
 Административная панель для приложения shop
 """
 from django.contrib import admin
-from .models import Product, Category, Tag, ProductImage, ProductReview, SupportTicket, SupportTicketAttachment
+from .models import Product, Category, Tag, ProductImage, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
 
 
 @admin.register(Category)

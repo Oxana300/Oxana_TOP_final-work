@@ -3,6 +3,7 @@
 """
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from datetime import date
 from PIL import Image
 
@@ -236,7 +237,8 @@ class Product(models.Model):
     
     def get_final_price(self):
         """Возвращает цену со скидкой, если она есть, иначе обычную цену"""
-        return self.discount_price if self.discount_price else self.price
+        return self.discount_price if self.discount_price and self.discount_price > 0 else self.price
+    
     
     get_final_price.short_description = "Итоговая цена"
     
@@ -516,6 +518,10 @@ class SupportTicketAttachment(models.Model):
         if self.file:
             return round(self.file.size / (1024 * 1024), 2)
         return 0
+    
+    def clean(self):
+        if self.file and self.file.size > 5 * 1024 * 1024:
+            raise ValidationError('Файл не должен превышать 5 МБ')
     
 class UserProfile(models.Model):
     """Профиль пользователя магазина"""

@@ -16,12 +16,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='supportticket',
             name='category',
-            field=models.CharField(choices=[('question', 'Вопрос'), ('Жалоба', 'complant'), ('Предложение', 'suggestion'), ('technical', 'Техническая проблема'), ('other', 'Другое')], default='question', max_length=20, verbose_name='Категория'),
+            field=models.CharField(choices=[('question', 'Вопрос'), ('complant', 'Жалоба'), ('suggestion', 'Предложение'), ('technical', 'Техническая проблема'), ('other', 'Другое')], default='question', max_length=20, verbose_name='Категория'),
         ),
         migrations.AlterField(
             model_name='supportticket',
             name='priority',
-            field=models.CharField(choices=[('low', 'низкий'), ('medium', 'средний'), ('high', 'высокий'), ('Срочный', 'urgent')], default='medium', max_length=20, verbose_name='Приоритет'),
+            field=models.CharField(choices=[('low', 'низкий'), ('medium', 'средний'), ('high', 'высокий'), ('urgent', 'Срочный')], default='medium', max_length=20, verbose_name='Приоритет'),
         ),
         migrations.AlterField(
             model_name='supportticket',
