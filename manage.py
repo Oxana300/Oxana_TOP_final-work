@@ -20,3 +20,11 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+# git status
+# git add .
+# git commit -m ""
+# git push origin main
+# python manage.py makemigrations
+# python manage.py migrate
