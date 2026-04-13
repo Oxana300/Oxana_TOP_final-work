@@ -28,6 +28,8 @@ if __name__ == '__main__':
 # git push origin main
 # python manage.py makemigrations
 # python manage.py migrate
+# pip list - проверить что установено
+
 
 #Локальная подготовка (выполнить перед пушем)
 # 1. Установить зависимости
