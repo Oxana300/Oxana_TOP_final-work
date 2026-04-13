@@ -10,32 +10,25 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+# myproject/settings.py
+import os
+import sys
 from pathlib import Path
 from decouple import config, Csv
 
-import os
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Build paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ============================================
+# БЕЗОПАСНОСТЬ
+# ============================================
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-temp-key-for-dev')
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-35@kyke(hiyo*6*@jjxjhs2*-#f@c@bu1=ws2k-2fsh9k3rw1t'   # (проектное значение)
-SECRET_KEY = config('SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True     # (проектное значение)
-DEBUG = config('DEBUG', default = False, cast = bool)
-
-# ALLOWED_HOSTS = []      # (проектное значение)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default = '', cast = Csv())
-
-
-# Application definition
-
+# ============================================
+# ПРИЛОЖЕНИЯ
+# ============================================
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,42 +40,37 @@ INSTALLED_APPS = [
     'telegram_bot',
 ]
 
+# ============================================
+# MIDDLEWARE (порядок важен!)
+# ============================================
 MIDDLEWARE = [
-    # безопасность (HTTPS, XSS защита)
-    'django.middleware.security.SecurityMiddleware',
-
-    # коммент ВРЕМЕННО для проверки удаляю (не всегда работает с whitenoise)
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    # работа с сессиями
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    # общие вещи (редиректы, просмотры)
-    'django.middleware.common.CommonMiddleware',
-    # защита от CRSF  атак
-    'django.middleware.csrf.CsrfViewMiddleware',
-    # аутентификация пользователя
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-     # система сообщений
-    'django.contrib.messages.middleware.MessageMiddleware',
-    # защита от clickjacking атак
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Кастомные middleware
-    'shop.middleware.RequestLoggingMiddleware',
+    'django.middleware.security.SecurityMiddleware',         # безопасность (HTTPS, XSS защита)
+    'whitenoise.middleware.WhiteNoiseMiddleware',            # Должен быть сразу после SecurityMiddleware
+    'django.contrib.sessions.middleware.SessionMiddleware',  # работа с сессиями
+    'django.middleware.common.CommonMiddleware',             # общие вещи (редиректы, просмотры)
+    'django.middleware.csrf.CsrfViewMiddleware',              # защита от CRSF  атак
+    'django.contrib.auth.middleware.AuthenticationMiddleware',# аутентификация пользователя
+    'django.contrib.messages.middleware.MessageMiddleware',    # система сообщений
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # защита от clickjacking атак
+    'shop.middleware.RequestLoggingMiddleware',                 # Кастомные middleware
 ]
 
 ROOT_URLCONF = 'myproject.urls'
 
+# ============================================
+# ШАБЛОНЫ
+# ============================================
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],    # Можно оставить пустым
-        'APP_DIRS': True,  # Это важно! Должно быть True
+        'DIRS': [],                             # Можно оставить пустым
+        'APP_DIRS': True,                       # Это важно! Должно быть True
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.debug',
-
                 'shop.context_processors.shop_context',
                 'shop.context_processors.support_context',
             ],
@@ -92,40 +80,36 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
+# ============================================
+# БАЗА ДАННЫХ (АВТОМАТИЧЕСКИЙ ВЫБОР)
+# ============================================
+# Получаем DATABASE_URL из переменных окружения (Railway)
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
-"""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DATABASE_URL:
+    # Railway PostgreSQL
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
     }
-}
-"""
-#это заменили на следующее  для входа с локального сервера на продакшн
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DATABASE_NAME'),
-        'USER': config('DATABASE_USER'),
-        'PASSWORD': config('DATABASE_PASSWORD', default = ''),
-        'HOST': config('DATABASE_HOST'),
-        'PORT': config('DATABASE_PORT', default='5432'),
-        'CONN_MAX_AGE': 600,  # Кэширование соединений
-        'OPTIONS': {
-            'sslmode': 'require',  # Обязательно для Railway
-        },
+    print("✅ Connected to PostgreSQL on Railway")
+else:
+    # Локальная разработка - SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+    print("✅ Using SQLite for local development")
 
-
-
-# Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
+# ============================================
+# ВАЛИДАЦИЯ ПАРОЛЕЙ
+# ============================================
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -141,71 +125,81 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+# ============================================
+# ИНТЕРНАЦИОНАЛИЗАЦИЯ
+# ============================================
+LANGUAGE_CODE = 'ru-ru'
+TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = 'static/'
+# ============================================
+# СТАТИЧЕСКИЕ ФАЙЛЫ (для Whitenoise)
+# ============================================
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-# # коммент ВРЕМЕННО для проверки убираю следующее:
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-# ОКСАНА добавила
+# ============================================
+# МЕДИА ФАЙЛЫ
+# ============================================
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после входа
-LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода
-LOGIN_URL = '/accounts/login/'  # URL страницы входа
+# ============================================
+# АУТЕНТИФИКАЦИЯ
+# ============================================
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/accounts/login/'
 
-# Время жизни сессии в секундах
-SESSION_COOKIE_AGE = 1209600 # две недели
-
-# Использование HTTPS для кук сессии (В продакшене True)
-SESSION_COOKIE_SECURE = False
-
-# Название кук сессии
+# ============================================
+# СЕССИИ
+# ============================================
+SESSION_COOKIE_AGE = 1209600
+SESSION_COOKIE_SECURE = not DEBUG  # True в продакшене, False в разработке
 SESSION_COOKIE_NAME = 'sessionid'
 
-# Настройки аутентификации
-# LOGIN_URL = '/login/'  # URL для входа
-# LOGIN_REDIRECT_URL = '/'  # Куда перенаправлять после входа
-# LOGOUT_REDIRECT_URL = '/'  # Куда перенаправлять после выхода
+# ============================================
+# CSRF
+# ============================================
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 
-# Доверенные источники для CSRF
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default = '', cast=Csv())
-
-# ОКСАНА добавила Настройки для медиафайлов (аватары, изображения товаров)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-if not DEBUG:
-    # Настройка для продакшена (например, S3) добавила ОКСАНА
-    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID', default='')
-    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY', default='')
-    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME', default='')
-    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com'
-    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
-
-# TELEGRAM_BOT
+# ============================================
+# TELEGRAM БОТ
+# ============================================
 TELEGRAM_BOT_TOKEN = config('TELEGRAM_BOT_TOKEN', default='')
-TELEGRAM_BOT_USERNAME = config('TELEGRAN_BOT_USERNAME', default='')
+TELEGRAM_BOT_USERNAME = config('TELEGRAM_BOT_USERNAME', default='')
 TELEGRAM_ADMIN_IDS = config('TELEGRAM_ADMIN_IDS', default='', cast=Csv())
 
-
+# ============================================
+# ПРОЧЕЕ
+# ============================================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# ============================================
+# ЛОГИРОВАНИЕ
+# ============================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 # В ТЕРМИНАЛЕ:
 # python manage.py makemigrations
 # python manage.py migrate

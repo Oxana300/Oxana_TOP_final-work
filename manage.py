@@ -28,3 +28,39 @@ if __name__ == '__main__':
 # git push origin main
 # python manage.py makemigrations
 # python manage.py migrate
+
+#Локальная подготовка (выполнить перед пушем)
+# 1. Установить зависимости
+#pip install -r requirements.txt
+
+# 2. Создайте .env файл для локальной разработки
+# (скопируйте из .env.example)
+
+# 3. Проверьте настройки
+#python manage.py check --deploy
+
+# 4. Создайте локальную БД
+#python manage.py migrate
+
+# 5. Соберите статику
+#python manage.py collectstatic --noinput
+
+# 6. Запустите сервер для теста
+#python manage.py runserver
+
+# 7. Если всё работает - остановить сервер (Ctrl+C)
+
+
+# Пуш на GitHub
+
+# 1. Убедитесь, что .env НЕ в git
+#git status
+
+# 2. Добавьте все файлы
+# git add .
+
+# 3. Создайте коммит
+#git commit -m "Ready for Railway deployment with PostgreSQL"
+
+# 4. Пуш
+#git push origin main

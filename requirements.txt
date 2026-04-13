@@ -1,10 +1,13 @@
-Django>=5.0,<6.0
-python-decouple == 3.8
-Pillow==10.0.0
+Django==5.1.3
+python-decouple==3.8
+Pillow==10.4.0
 gunicorn==21.2.0
-whitenoise==6.6.0
+whitenoise==6.7.0
 psycopg2-binary==2.9.9
-pytz>=2024.1
-aiogram>=3.0.0
-django-mptt>=0.14.0
-tzdata>=2024.1
+dj-database-url==2.1.0
+pytz==2024.1
+aiogram==3.13.1
+django-mptt==0.16.0
+tzdata==2024.1
+#boto3==1.34.0  # Для AWS S3 (опционально)
+#django-storages==1.14.0  # Для AWS S3 (опционально)
