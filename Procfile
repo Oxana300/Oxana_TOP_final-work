@@ -1,1 +1,1 @@
-web: python -c "import time; time.sleep(15)" && gunicorn myproject.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4
+web: python manage.py migrate --noinput && sleep 15 && gunicorn myproject.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4
