@@ -65,11 +65,11 @@
                             <h3>Цена</h3>
                             <div class="d-flex align-items-baseline">
                                 <span class="display-5 fw-bold text-primary">
-                                    ${{ product.get_final_price }}
+                                    ₽{{ product.get_final_price }}
                                 </span>
                                 {% if product.discount_price %}
                                 <span class="ms-3 fs-4 text-decoration-line-through text-muted">
-                                    ${{ product.price }}
+                                    ₽{{ product.price }}
                                 </span>
                                 <span class="ms-2 badge bg-danger">
                                     -{{ product.get_discount_percentage }}%
@@ -111,6 +111,33 @@
                             <button class="btn btn-primary btn-lg">
                                 <i class="bi bi-cart"></i> Добавить в корзину
                             </button>
+                            <!--Добавьте кнопку предзаказа -->
+                            <button class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#preorderModal">
+                                <i class="bi bi-calendar-check"></i> Предзаказ
+                            </button>
+
+                            <!-- Модальное окно предзаказа -->
+                            <div class="modal fade" id="preorderModal" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Предзаказ: {{ product.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'shop:preorder' product.slug %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                {{ form.as_p }}
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                <button type="submit" class="btn btn-warning">Оформить предзаказ</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <button class="btn btn-outline-secondary">
                                 <i class="bi bi-heart"></i> В избранное
                             </button>
@@ -118,6 +145,8 @@
                     </div>
                 </div>
                 
+                
+
                 <div class="mb-4">
                     <h3>Описание</h3>
                     <p class="lead">{{ product.description|default:"Описание отсутствует" }}</p>
@@ -214,7 +243,8 @@
                             <div class="card-body text-center">
                                 <h6 class="card-title">{{ related.name }}</h6>
                                 <p class="card-text">
-                                    <span class="fw-bold text-primary">${{ related.get_final_price }}</span>
+                                    <span class="fw-bold text-primary">₽
+                                        {{ related.get_final_price }}</span>
                                 </p>
                             </div>
                         </a>

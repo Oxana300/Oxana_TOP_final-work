@@ -90,11 +90,11 @@
                         
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="fs-5 fw-bold text-primary">
-                                ${{ product.get_final_price }}
+                                ₽{{ product.get_final_price }}
                             </span>
                             {% if product.discount_price %}
                             <span class="text-decoration-line-through text-muted">
-                                ${{ product.price }}
+                                ₽{{ product.price }}
                             </span>
                             {% endif %}
                         </div>

@@ -51,6 +51,8 @@ urlpatterns = [
     # Корзина и оформление заказа
     path('cart/', views.cart_page, name='cart'),
     path('checkout/', views.checkout_page, name='checkout'),
+    path('cart/add/<slug:product_slug>/', views.add_to_cart, name='add_to_cart'),
+    path('cart/update/<int:item_id>/', views.update_cart, name='update_cart'),
     
     # === РАЗДЕЛ ПОДДЕРЖКИ ===
     # Публичные страницы
@@ -89,5 +91,8 @@ urlpatterns = [
     path('profile/reviews/', views.profile_reviews, name='profile_reviews'),
     path('profile/tickets/', views.profile_tickets, name='profile_tickets'),
     path('telegram/', include('telegram_bot.urls', namespace='telegram_bot')),
+        # Предзаказ с указанием дней до исполнения
+    path('preorder/<slug:product_slug>/', views.preorder_view, name='preorder'),
+
 
 ]

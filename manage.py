@@ -66,3 +66,6 @@ if __name__ == '__main__':
 
 # 4. Пуш
 #git push origin main
+
+# Проверьте структуру
+# tree shop\static

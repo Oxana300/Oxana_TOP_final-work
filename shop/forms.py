@@ -2,7 +2,7 @@
 Формы для приложения магазина
 """
 from django import forms
-from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
+from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile, Preorder
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
@@ -979,3 +979,17 @@ class UserInfoForm(forms.ModelForm):
                 raise ValidationError("Этот email уже используется другим пользователем")
         
         return email
+    
+# Предзаказ с указанием дней до исполнения
+class PreorderForm(forms.ModelForm):
+    class Meta:
+        model = Preorder
+        fields = ['customer_name', 'email', 'phone', 'quantity', 'days_to_delivery', 'comment']
+        widgets = {
+            'customer_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ваше имя'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+7 (999) 123-45-67'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'value': 1}),
+            'days_to_delivery': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 30}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Дополнительные пожелания'}),
+        }

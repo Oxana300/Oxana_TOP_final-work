@@ -19,7 +19,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.utils.html import strip_tags  # ✅ Добавлен импорт
 
-from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
+from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile, Preorder
 from .forms import (ProductReviewForm, 
                     SupportTicketForm, 
                     SupportTicketUpdateForm, 
@@ -28,24 +28,14 @@ from .forms import (ProductReviewForm,
                     UserRegistrationForm,
                     UserProfileForm,
                     UserAvatarForm,
-                    UserInfoForm
+                    UserInfoForm,
+                    PreorderForm
                     )
-
+from .utils import sanitize_text
 # ✅ Инициализация логгера
 logger = logging.getLogger(__name__)
 
-from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile
-from .forms import (ProductReviewForm, 
-                    SupportTicketForm, 
-                    SupportTicketUpdateForm, 
-                    SupportResponseForm, 
-                    SupportTicketAttachmentForm, 
-                    UserRegistrationForm,
-                    UserProfileForm,
-                    UserAvatarForm,
-                    UserInfoForm
-                    )
-from .utils import sanitize_text
+
 
 class HomePageView(TemplateView):
     """Главная страница магазина"""
@@ -819,3 +809,79 @@ def product_list_fbv(request):
 
     }
     return render(request, 'shop/product_list.html', context)
+
+@login_required
+def preorder_view(request, product_slug):
+    product = get_object_or_404(Product, slug=product_slug)
+    
+    if request.method == 'POST':
+        form = PreorderForm(request.POST)
+        if form.is_valid():
+            preorder = form.save(commit=False)
+            preorder.product = product
+            preorder.user = request.user if request.user.is_authenticated else None
+            preorder.save()
+            
+            # Отправка уведомления
+            messages.success(request, f'Предзаказ на {product.name} оформлен! Мы свяжемся с вами.')
+            return redirect('shop:product_detail', slug=product_slug)
+    else:
+        form = PreorderForm(initial={'customer_name': request.user.get_full_name(), 'email': request.user.email})
+    
+    return render(request, 'shop/preorder.html', {'form': form, 'product': product})
+
+
+# Исправление корзины
+from .models import Cart, CartItem
+
+def get_cart(request):
+    """Получение или создание корзины"""
+    if request.user.is_authenticated:
+        cart, created = Cart.objects.get_or_create(user=request.user)
+    else:
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
+        cart, created = Cart.objects.get_or_create(session_key=session_key)
+    return cart
+
+def add_to_cart(request, product_slug):
+    product = get_object_or_404(Product, slug=product_slug)
+    cart = get_cart(request)
+    
+    cart_item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        defaults={'quantity': 1}
+    )
+    
+    if not created:
+        cart_item.quantity += 1
+        cart_item.save()
+    
+    messages.success(request, f'{product.name} добавлен в корзину')
+    return redirect('shop:cart')
+
+def cart_page(request):
+    cart = get_cart(request)
+    items = cart.items.all()
+    total = sum(item.get_subtotal() for item in items)
+    
+    return render(request, 'shop/cart.html', {
+        'cart_items': items,
+        'total': total,
+        'cart_count': cart.get_total_items()
+    })
+
+def update_cart(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id)
+    quantity = int(request.POST.get('quantity', 1))
+    
+    if quantity > 0:
+        cart_item.quantity = quantity
+        cart_item.save()
+    else:
+        cart_item.delete()
+    
+    return redirect('shop:cart')

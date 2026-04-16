@@ -166,4 +166,43 @@ def notify_user_about_order_status(order):
         # Закрываем сессию бота
         asyncio.create_task(bot.session.close())
 """
+import asyncio
+import logging
+from aiogram import Bot
+from decouple import config
 
+logger = logging.getLogger(__name__)
+
+# Глобальная переменная для бота
+_bot = None
+
+def get_bot():
+    global _bot
+    if _bot is None:
+        token = config('TELEGRAM_BOT_TOKEN', default='')
+        if token:
+            _bot = Bot(token=token)
+    return _bot
+
+async def send_message_async(chat_id, text):
+    bot = get_bot()
+    if bot:
+        try:
+            await bot.send_message(chat_id=chat_id, text=text, parse_mode='HTML')
+            return True
+        except Exception as e:
+            logger.error(f"Telegram error: {e}")
+    return False
+
+def send_telegram_message(chat_id, text):
+    """Синхронная обертка для отправки сообщений"""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.create_task(send_message_async(chat_id, text))
+        else:
+            asyncio.run(send_message_async(chat_id, text))
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send message: {e}")
+        return False
