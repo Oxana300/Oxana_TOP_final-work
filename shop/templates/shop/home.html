@@ -24,7 +24,7 @@
                     <p class="card-text text-muted">{{ product.category.name }}</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="fs-4 fw-bold text-primary">
-                            ${{ product.get_final_price }}
+                            ₽{{ product.get_final_price }}
                         </span>
                         {% if product.discount_price %}
                         <span class="badge bg-danger">-{{ product.get_discount_percentage }}%</span>
@@ -53,9 +53,9 @@
                 <div class="card-body">
                     <h6 class="card-title">{{ product.name }}</h6>
                     <p class="card-text">
-                        <span class="text-primary fw-bold">${{ product.get_final_price }}</span>
+                        <span class="text-primary fw-bold">₽{{ product.get_final_price }}</span>
                         {% if product.discount_price %}
-                        <span class="text-decoration-line-through text-muted">${{ product.price }}</span>
+                        <span class="text-decoration-line-through text-muted">₽{{ product.price }}</span>
                         {% endif %}
                     </p>
                     <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-sm btn-outline-primary">
