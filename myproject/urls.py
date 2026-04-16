@@ -21,21 +21,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 #from . import views
 
-from django.contrib.auth.models import User
-from django.http import HttpResponse
-
-def create_admin(request):
-    if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser('admin', 'admin@example.com', 'admin123')
-        return HttpResponse("✅ Admin created! Login: admin, Password: admin123")
-    return HttpResponse("Admin already exists")
-
-
-
-#=============все удалить сверху после создания суперпользователя=====
 
 urlpatterns = [
-    path('create-admin/', create_admin),  # ВРЕМЕННО!УДАЛИТЬ
+   
     path('admin/', admin.site.urls),
     #path('products/', views.product_list, name='product_list'),
     path('', include('shop.urls', namespace='shop')),
