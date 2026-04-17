@@ -69,3 +69,9 @@ if __name__ == '__main__':
 
 # Проверьте структуру
 # tree shop\static
+
+# # Поиск модели в файле
+# findstr "class Preorder" shop\models.py
+
+# 1. Проверьте существующие миграции
+# python manage.py showmigrations shop

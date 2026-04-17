@@ -481,28 +481,7 @@ class AdminResponseView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         context['title'] = f'Ответ на обращение #{self.object.id}'
         context['ticket'] = self.object
         return context
-    
-    def form_valid(self,form):
-        ticket = form.save(commit=False)
-        
-        # ЕСли ответ опубликован - отправляем уведомление
-        if form.cleaned_data.get('send_notification') and ticket.is_public:
-            try:
-                send_mail(
-                    subject=f'Ответ на ваше обращение #{ticket.id}',
-                    message=f'Здравствуйте!\n\n{ticket.response}\n\nС уважением, администрация магазина.',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[ticket.email],
-                    fail_silently=False,
-                )
-                messages.success(self.request, 'Ответ отправлен пользователю на email')
-            except Exception as e:
-                messages.warning(self.request, f'Ошибка отправки email: {str(e)}')
-        
-        ticket.save()
-        messages.success(self.request, 'Ответ сохранен')
-        return super().form_valid(form)
-    
+          
     def form_valid(self, form):
         ticket = form.save(commit=False)
         

@@ -1026,24 +1026,35 @@ class CartItem(models.Model):
         """Сумма позиции"""
         return self.product.get_final_price() * self.quantity
     
-    # Добавьте метод для форматирования цены
-    def get_final_price_rub(self):
-        return f"{self.get_final_price():.2f} ₽"
     
 class Preorder(models.Model):
     """Модель предзаказа"""
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name="Товар")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey(
+        'Product', 
+        on_delete=models.CASCADE, 
+        verbose_name="Товар",
+        related_name="preorders"
+    )
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        verbose_name="Пользователь"
+    )
     customer_name = models.CharField(max_length=100, verbose_name="Имя")
     email = models.EmailField(verbose_name="Email")
     phone = models.CharField(max_length=20, verbose_name="Телефон")
     quantity = models.PositiveIntegerField(default=1, verbose_name="Количество")
     days_to_delivery = models.PositiveIntegerField(verbose_name="Дней до исполнения")
-    preferred_delivery_date = models.DateField(verbose_name="Желаемая дата доставки", null=True, blank=True)
     comment = models.TextField(blank=True, verbose_name="Комментарий")
-    created_at = models.DateTimeField(auto_now_add=True)
-    is_processed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    is_processed = models.BooleanField(default=False, verbose_name="Обработан")
     
     class Meta:
         verbose_name = "Предзаказ"
         verbose_name_plural = "Предзаказы"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Предзаказ #{self.id} - {self.product.name} ({self.customer_name})"
