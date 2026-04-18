@@ -101,12 +101,15 @@
                         
                         <div class="d-grid gap-2">
                             <a href="{% url 'shop:product_detail' product.slug %}" 
-                               class="btn btn-outline-primary">
-                                Подробнее
+                                class="btn btn-outline-primary">
+                                 Подробнее
                             </a>
-                            <button class="btn btn-primary">
-                                В корзину
-                            </button>
+                            <form method="post" action="{% url 'shop:add_to_cart' product.slug %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-cart-plus"></i> В корзину
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

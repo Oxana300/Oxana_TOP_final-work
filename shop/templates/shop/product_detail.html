@@ -108,36 +108,17 @@
                         </div>
                         
                         <div class="d-grid gap-2">
-                            <button class="btn btn-primary btn-lg">
-                                <i class="bi bi-cart"></i> Добавить в корзину
-                            </button>
-                            <!--Добавьте кнопку предзаказа -->
+                            <form method="post" action="{% url 'shop:add_to_cart' product.slug %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi bi-cart-plus"></i> Добавить в корзину
+                                </button>
+                            </form>
+    
                             <button class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#preorderModal">
                                 <i class="bi bi-calendar-check"></i> Предзаказ
                             </button>
-
-                            <!-- Модальное окно предзаказа -->
-                            <div class="modal fade" id="preorderModal" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Предзаказ: {{ product.name }}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form method="post" action="{% url 'shop:preorder' product.slug %}">
-                                            {% csrf_token %}
-                                            <div class="modal-body">
-                                                {{ form.as_p }}
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                                <button type="submit" class="btn btn-warning">Оформить предзаказ</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            
+    
                             <button class="btn btn-outline-secondary">
                                 <i class="bi bi-heart"></i> В избранное
                             </button>
