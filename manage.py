@@ -61,6 +61,9 @@ if __name__ == '__main__':
 # 2. Добавьте все файлы
 # git add .
 
+# или изменения только из определенной папки
+# git add shop/templates/shop/
+
 # 3. Создайте коммит
 #git commit -m "Ready for Railway deployment with PostgreSQL"
 
@@ -75,3 +78,7 @@ if __name__ == '__main__':
 
 # 1. Проверьте существующие миграции
 # python manage.py showmigrations shop
+
+# Поверяет галичие определенных строк/слов в определенном файле
+# type shop\urls.py | findstr "add_to_cart"
+# type shop\views.py | findstr "def add_to_cart"       определенных функций

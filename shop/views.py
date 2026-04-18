@@ -826,9 +826,11 @@ def get_cart(request):
     return cart
 
 def add_to_cart(request, product_slug):
+    """Добавление товара в корзину"""
     product = get_object_or_404(Product, slug=product_slug)
     cart = get_cart(request)
     
+    # Проверяем, есть ли уже такой товар в корзине
     cart_item, created = CartItem.objects.get_or_create(
         cart=cart,
         product=product,
@@ -839,8 +841,11 @@ def add_to_cart(request, product_slug):
         cart_item.quantity += 1
         cart_item.save()
     
-    messages.success(request, f'{product.name} добавлен в корзину')
-    return redirect('shop:cart')
+    messages.success(request, f'Товар "{product.name}" добавлен в корзину!')
+    
+    # Возвращаемся на предыдущую страницу или на страницу корзины
+    next_url = request.POST.get('next', request.GET.get('next', 'shop:cart'))
+    return redirect(next_url)
 
 def cart_page(request):
     cart = get_cart(request)
