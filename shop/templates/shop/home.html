@@ -10,10 +10,19 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col text-center">
-        <h1 class="display-4">Добро пожаловать в наш магазин!</h1>
-        <p class="lead">Лучшие товары по выгодным ценам</p>
+        <!-- Большой логотип на главной -->
+        <div class="logo-container mb-4">
+            <img src="{% static 'shop/images/logo.png' %}" 
+                 alt="Логотип магазина Полезная микрозелень" 
+                 class="img-fluid main-logo"
+                 style="max-height: 180px; border-radius: 20px;">
+        </div>
+        <h1 class="display-4">🌱 Добро пожаловать в мир микрозелени!</h1>
+        <p class="lead">Свежая микрозелень премиум-класса с доставкой на дом</p>
+        <hr class="my-4" style="width: 100px; margin: 20px auto; height: 3px; background: #2e7d32;">
     </div>
 </div>
+
 
 <!-- 3D Карусель товаров -->
 {% if carousel_products %}

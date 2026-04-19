@@ -3,23 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Магазин{% endblock %}</title>
+    <title>{% block title %}Магазин микрозелени{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     {% load static %}
     <link rel="stylesheet" href="{% static 'shop/css/custom.css' %}">
     <style>
-        .navbar-brand { font-weight: bold; }
-        .featured-badge { position: absolute; top: 10px; right: 10px; }
-        .product-card { transition: transform 0.3s; }
-        .product-card:hover { transform: translateY(-5px); }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .navbar-brand img {
+            height: 45px;
+            width: auto;
+            transition: transform 0.3s ease;
+        }
+        .navbar-brand:hover img {
+            transform: scale(1.05);
+        }
+        .main-logo {
+            max-height: 150px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        .main-logo:hover {
+            transform: scale(1.02);
+        }
+        @media (max-width: 768px) {
+            .main-logo {
+                max-height: 100px;
+            }
+            .navbar-brand img {
+                height: 35px;
+            }
+        }
+        .logo-text {
+            font-weight: bold;
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
     </style>
 </head>
 <body>
     <!-- Навигация -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'shop:home' %}">🛒 Магазин</a>
+            <a class="navbar-brand" href="{% url 'shop:home' %}">
+                {% load static %}
+                <img src="{% static 'shop/images/logo.png' %}" alt="Логотип">
+                <span class="logo-text">Полезная микрозелень</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -38,85 +75,60 @@
                         <a class="nav-link" href="{% url 'shop:contact' %}">Контакты</a>
                     </li>
                 </ul>
+                
                 <ul class="navbar-nav">
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'shop:cart' %}">
                             <i class="bi bi-cart"></i> Корзина
                         </a>
                     </li>
+                    
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
+                           data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle"></i> {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'shop:profile' %}">
+                                    <i class="bi bi-person"></i> Мой профиль
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'shop:profile_orders' %}">
+                                    <i class="bi bi-box"></i> Мои заказы
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'shop:profile_tickets' %}">
+                                    <i class="bi bi-headset"></i> Поддержка
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="bi bi-box-arrow-right"></i> Выйти
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Войти</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'shop:register' %}">Регистрация</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- ОКСАНА Добавляю ссылку на регистрацию в навигацию-->
-    <ul class="navbar-nav">
-        {% if user.is_authenticated %}
-            <li class="nav-item">
-                <span class="nav-link">Привет, {{ user.username }}</span>
-            </li>
-            <li class="nav-item">
-                <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn nav-link" style="border: none; background: none; cursor: pointer;">
-                        Выйти
-                    </button>
-                </form>
-            </li>
-        {% else %}
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'login' %}">Войти</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{% url 'shop:register' %}">Регистрация</a>
-            </li>
-        {% endif %}
-    </ul>
-
-    <!-- ОКСАНА Добавляю ссылку на профиль в меню пользователя-->
-<ul class="navbar-nav">
-    {% if user.is_authenticated %}
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" 
-               data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-circle"></i> {{ user.username }}
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                <li>
-                    <a class="dropdown-item" href="{% url 'shop:profile' %}">
-                        <i class="bi bi-person"></i> Мой профиль
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="{% url 'shop:profile_orders' %}">
-                        <i class="bi bi-box"></i> Мои заказы
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="{% url 'shop:profile_tickets' %}">
-                        <i class="bi bi-headset"></i> Обращения в поддержку
-                    </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <form method="post" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="dropdown-item">
-                            <i class="bi bi-box-arrow-right"></i> Выйти
-                        </button>
-                    </form>
-                </li>
-            </ul>
-        </li>
-    {% else %}
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'login' %}">Войти</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'shop:register' %}">Регистрация</a>
-        </li>
-    {% endif %}
-</ul>
     <!-- Основной контент -->
     <main class="container my-4">
         {% if messages %}
@@ -134,14 +146,28 @@
     <!-- Футер -->
     <footer class="bg-dark text-white text-center py-3 mt-5">
         <div class="container">
-            <p class="mb-0">&copy; 2026 Магазин. Все права защищены.</p>
+            <div class="row">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h6>🌱 Полезная микрозелень</h6>
+                    <small class="text-muted">Выращено с любовью</small>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h6>📞 Контакты</h6>
+                    <small class="text-muted">+7 (921) 459-15-74</small><br>
+                    <small class="text-muted">info@myshop.ru</small>
+                </div>
+                <div class="col-md-4">
+                    <h6>🕒 Режим работы</h6>
+                    <small class="text-muted">Пн-Пт: 9:00 - 20:00</small><br>
+                    <small class="text-muted">Сб-Вс: 10:00 - 18:00</small>
+                </div>
+            </div>
+            <hr class="my-3 bg-secondary">
+            <p class="mb-0 small">&copy; 2026 Магазин "Полезная микрозелень". Все права защищены.</p>
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
-
-
-{% load static %}
-<script src="{% static 'shop/js/date-validation.js' %}"></script>

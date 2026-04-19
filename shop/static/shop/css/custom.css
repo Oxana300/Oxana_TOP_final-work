@@ -49,3 +49,44 @@ body::before {
     background-color: #406142;
     border-color: #406142;
 }
+
+/* Логотип анимация */
+.logo-container {
+    animation: fadeInDown 0.8s ease;
+}
+
+.main-logo {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    transition: all 0.3s ease;
+}
+
+.main-logo:hover {
+    filter: drop-shadow(0 8px 16px rgba(46, 125, 50, 0.2));
+    transform: translateY(-3px);
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Логотип в навигации */
+.navbar-brand img {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+    transform: scale(1.05);
+}
+
+.logo-text {
+    font-family: 'Segoe UI', sans-serif;
+    letter-spacing: 0.5px;
+}
