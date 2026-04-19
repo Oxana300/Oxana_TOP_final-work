@@ -29,6 +29,14 @@
                                     <input type="email" name="email" id="email" class="form-control" required>
                                 </div>
                             </div>
+                            {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-person-circle"></i> 
+                                Заказ оформляется от имени: <strong>{{ user.get_full_name|default:user.username }}</strong>
+                                <br>Email: {{ user.email }}
+                            </div>
+                            <input type="hidden" name="email" value="{{ user.email }}">
+                            <input type="hidden" name="name" value="{{ user.get_full_name|default:user.username }}">
                             {% endif %}
                             
                             <div class="mb-3">

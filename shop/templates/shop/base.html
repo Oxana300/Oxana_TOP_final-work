@@ -9,42 +9,51 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'shop/css/custom.css' %}">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+            margin-top: auto;
+        }
         .navbar-brand {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        .navbar-brand img {
-            height: 45px;
-            width: auto;
-            transition: transform 0.3s ease;
-        }
-        .navbar-brand:hover img {
-            transform: scale(1.05);
-        }
-        .main-logo {
-            max-height: 150px;
-            margin-bottom: 20px;
-            transition: transform 0.3s ease;
-        }
-        .main-logo:hover {
-            transform: scale(1.02);
-        }
-        @media (max-width: 768px) {
-            .main-logo {
-                max-height: 100px;
-            }
-            .navbar-brand img {
-                height: 35px;
-            }
+        .logo-placeholder {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
         }
         .logo-text {
             font-weight: bold;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             background: linear-gradient(135deg, #2e7d32, #1b5e20);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+        }
+        @media (max-width: 768px) {
+            .logo-text {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
@@ -53,10 +62,10 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{% url 'shop:home' %}">
-                {% load static %}
-                <img src="{% static 'shop/images/logo.png' %}" alt="Логотип">
+                <div class="logo-placeholder">🌱</div>
                 <span class="logo-text">Полезная микрозелень</span>
             </a>
+
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -154,7 +163,7 @@
                 <div class="col-md-4 mb-3 mb-md-0">
                     <h6>📞 Контакты</h6>
                     <small class="text-muted">+7 (921) 459-15-74</small><br>
-                    <small class="text-muted">info@myshop.ru</small>
+                    <small class="text-muted">zaykova-oxana@yandex.ru</small>
                 </div>
                 <div class="col-md-4">
                     <h6>🕒 Режим работы</h6>

@@ -22,7 +22,7 @@ from django.utils.html import strip_tags  #  Добавлен импорт
 from .models import (
     Product, Category, Tag, ProductReview, 
     SupportTicket, SupportTicketAttachment, 
-    UserProfile, Preorder, Order, OrderItem  #  Добавлены Order и OrderItem
+    UserProfile, Preorder, Order, OrderItem, Cart, CartItem   #  Добавлены Order и OrderItem, Cart, Car
 )
 from .forms import (ProductReviewForm, 
                     SupportTicketForm, 
@@ -329,7 +329,19 @@ def cart_page(request):
 
 def checkout_page(request):
     """Страница оформления заказа"""
-    return render(request, 'shop/checkout.html')
+    cart = get_cart(request)
+    items = cart.items.all()
+    total = sum(item.get_subtotal() for item in items)
+    
+    if not items:
+        messages.warning(request, 'Ваша корзина пуста. Добавьте товары перед оформлением заказа.')
+        return redirect('shop:cart')
+    
+    return render(request, 'shop/checkout.html', {
+        'cart_items': items,
+        'total': total,
+        'cart_count': cart.get_total_items()
+    })
 
 # === Раздел поддержки ===
 class TicketCreateView(CreateView):
