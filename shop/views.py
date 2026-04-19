@@ -17,9 +17,13 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
-from django.utils.html import strip_tags  # ✅ Добавлен импорт
+from django.utils.html import strip_tags  #  Добавлен импорт
 
-from .models import Product, Category, Tag, ProductReview, SupportTicket, SupportTicketAttachment, UserProfile, Preorder
+from .models import (
+    Product, Category, Tag, ProductReview, 
+    SupportTicket, SupportTicketAttachment, 
+    UserProfile, Preorder, Order, OrderItem  #  Добавлены Order и OrderItem
+)
 from .forms import (ProductReviewForm, 
                     SupportTicketForm, 
                     SupportTicketUpdateForm, 
@@ -869,3 +873,45 @@ def update_cart(request, item_id):
         cart_item.delete()
     
     return redirect('shop:cart')
+
+@login_required
+def create_order(request):
+    """Создание заказа из корзины"""
+    if request.method == 'POST':
+        cart = get_cart(request)
+        
+        # Создаем заказ
+        order = Order.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            email=request.POST.get('email', request.user.email if request.user.is_authenticated else ''),
+            phone=request.POST.get('phone'),
+            address=request.POST.get('address'),
+            city=request.POST.get('city'),
+            postal_code=request.POST.get('postal_code', ''),
+            payment_method=request.POST.get('payment_method', 'card'),
+            delivery_method=request.POST.get('delivery_method', 'courier'),
+            comment=request.POST.get('comment', '')
+        )
+        
+        # Переносим товары из корзины в заказ
+        for cart_item in cart.items.all():
+            OrderItem.objects.create(
+                order=order,
+                product=cart_item.product,
+                quantity=cart_item.quantity,
+                price=cart_item.product.get_final_price()
+            )
+        
+        # Очищаем корзину
+        cart.clear()
+        
+        messages.success(request, f'Заказ #{order.id} успешно оформлен!')
+        return redirect('shop:order_confirmation', order_id=order.id)
+    
+    return redirect('shop:cart')
+
+def order_confirmation(request, order_id):
+    """Страница подтверждения заказа"""
+    order = get_object_or_404(Order, id=order_id)
+    return render(request, 'shop/order_confirmation.html', {'order': order})
+

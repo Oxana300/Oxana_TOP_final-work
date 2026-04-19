@@ -50,9 +50,12 @@ urlpatterns = [
     
     # Корзина и оформление заказа
     path('cart/', views.cart_page, name='cart'),
-    path('checkout/', views.checkout_page, name='checkout'),
     path('cart/add/<slug:product_slug>/', views.add_to_cart, name='add_to_cart'),
     path('cart/update/<int:item_id>/', views.update_cart, name='update_cart'),
+    
+    path('checkout/', views.checkout_page, name='checkout'),
+    path('create-order/', views.create_order, name='create_order'),
+    path('order-confirmation/<int:order_id>/', views.order_confirmation, name='order_confirmation'),
     
     # === РАЗДЕЛ ПОДДЕРЖКИ ===
     # Публичные страницы
@@ -94,5 +97,6 @@ urlpatterns = [
         # Предзаказ с указанием дней до исполнения
     path('preorder/<slug:product_slug>/', views.preorder_view, name='preorder'),
 
+    
 
 ]

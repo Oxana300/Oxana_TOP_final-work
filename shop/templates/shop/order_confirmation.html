@@ -1,0 +1,23 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Заказ оформлен - Магазин{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="text-center">
+        <i class="bi bi-check-circle-fill text-success display-1"></i>
+        <h2 class="mt-3">Заказ успешно оформлен!</h2>
+        <p class="lead">Номер вашего заказа: #{{ order.id }}</p>
+        <p>Статус: {{ order.get_status_display }}</p>
+        <p>Сумма: {{ order.total_price }} ₽</p>
+        <p>Способ доставки: {{ order.get_delivery_method_display }}</p>
+        <p>Способ оплаты: {{ order.get_payment_method_display }}</p>
+        <a href="{% url 'shop:profile_orders' %}" class="btn btn-primary mt-3">
+            Мои заказы
+        </a>
+        <a href="{% url 'shop:home' %}" class="btn btn-outline-secondary mt-3">
+            На главную
+        </a>
+    </div>
+</div>
+{% endblock %}
