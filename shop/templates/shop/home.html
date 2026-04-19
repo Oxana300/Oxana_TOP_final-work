@@ -1,20 +1,44 @@
 {% extends 'shop/base.html' %}
+{% load static %}
 
 {% block title %}Главная - Магазин{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'shop/css/carousel.css' %}">
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
-    <div class="col">
+    <div class="col text-center">
         <h1 class="display-4">Добро пожаловать в наш магазин!</h1>
         <p class="lead">Лучшие товары по выгодным ценам</p>
     </div>
 </div>
 
-<!-- ВРЕМЕННОО ЗАКОММЕНТИРОВАЛА    Рекомендуемые товары -->
-{% comment %}
+<!-- 3D Карусель товаров -->
+{% if carousel_products %}
+<div class="carousel-container" id="productCarousel" style="--n: {{ carousel_products|length }}">
+    <div class="carousel-scroll">
+        <div class="carousel-scene">
+            <div class="carousel-assembly"></div>
+        </div>
+    </div>
+    <div class="carousel-nav">
+        <button class="carousel-prev">←</button>
+        <button class="carousel-next">→</button>
+    </div>
+    <div class="carousel-indicators">
+        {% for product in carousel_products %}
+        <div class="carousel-dot {% if forloop.first %}active{% endif %}"></div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Рекомендуемые товары -->
 {% if featured_products %}
 <div class="mb-5">
-    <h2 class="mb-4">Рекомендуем</h2>
+    <h2 class="mb-4">🌟 Рекомендуем</h2>
     <div class="row row-cols-1 row-cols-md-3 g-4">
         {% for product in featured_products %}
         <div class="col">
@@ -24,7 +48,7 @@
                     <p class="card-text text-muted">{{ product.category.name }}</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="fs-4 fw-bold text-primary">
-                            ₽{{ product.get_final_price }}
+                            {{ product.get_final_price }} ₽
                         </span>
                         {% if product.discount_price %}
                         <span class="badge bg-danger">-{{ product.get_discount_percentage }}%</span>
@@ -40,39 +64,11 @@
     </div>
 </div>
 {% endif %}
-{% endcomment %}
-
-<!-- Новинки -->
-{% if new_products %}
-<div class="mb-5">
-    <h2 class="mb-4">Новинки</h2>
-    <div class="row row-cols-2 row-cols-md-4 g-3">
-        {% for product in new_products %}
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h6 class="card-title">{{ product.name }}</h6>
-                    <p class="card-text">
-                        <span class="text-primary fw-bold">₽{{ product.get_final_price }}</span>
-                        {% if product.discount_price %}
-                        <span class="text-decoration-line-through text-muted">₽{{ product.price }}</span>
-                        {% endif %}
-                    </p>
-                    <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-sm btn-outline-primary">
-                        В корзину
-                    </a>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
 
 <!-- Категории -->
 {% if categories %}
 <div>
-    <h2 class="mb-4">Категории</h2>
+    <h2 class="mb-4">📂 Категории</h2>
     <div class="row row-cols-2 row-cols-md-3 g-3">
         {% for category in categories %}
         <div class="col">
@@ -90,4 +86,22 @@
     </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'shop/js/carousel.js' %}"></script>
+<script>
+    // Передаем данные товаров для карусели
+    window.carouselProducts = [
+        {% for product in carousel_products %}
+        {
+            id: {{ product.id }},
+            name: "{{ product.name|escapejs }}",
+            slug: "{{ product.slug }}",
+            price: {{ product.get_final_price }},
+            image_url: {% if product.images.first %}"{{ product.images.first.image.url }}"{% else %}"{% static 'shop/images/default-product.jpg' %}"{% endif %}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+</script>
 {% endblock %}

@@ -53,8 +53,12 @@ class HomePageView(TemplateView):
         context['new_products'] = Product.published.order_by('-created_at')[:8]
         # Категории
         context['categories'] = Category.objects.all()[:6]
+        # Товары для карусели (рандомные, с фото)
+        context['carousel_products'] = Product.published.filter(
+            images__isnull=False  # Только товары с фото
+        ).distinct().order_by('?')[:12]  # Рандомно, до 12 товаров
         return context
-
+    
 class ProductListView(ListView):
     """Список товаров"""
     model = Product
