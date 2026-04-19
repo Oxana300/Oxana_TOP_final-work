@@ -35,7 +35,8 @@ db.sqlite3-journal
 # Cтатистика и медиа
 staticfiles/
 media/
-static/
+# static/          # ЗАКОММЕНТИРОВАНО! Исходные статические файлы нужно коммитить
+
 
 # IDE
 .vscode/
