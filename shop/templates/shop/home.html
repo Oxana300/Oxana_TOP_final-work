@@ -30,13 +30,15 @@
             <div class="carousel-track">
                 {% for product in carousel_products %}
                 <div class="carousel-slide" onclick="location.href='{% url 'shop:product_detail' product.slug %}'">
-                    {% if product.images.first %}
-                        <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}">
-                    {% else %}
-                        <div style="height: 200px; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 48px;">
-                            🌱
-                        </div>
-                    {% endif %}
+                    {% with product.images.first as first_image %}
+                        {% if first_image %}
+                            <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
+                        {% else %}
+                            <div style="height: 200px; background: linear-gradient(135deg, #2e7d32, #1b5e20); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">
+                                🌱
+                            </div>
+                        {% endif %}
+                    {% endwith %}
                     <div class="carousel-slide-info">
                         <h4>{{ product.name }}</h4>
                         <p>{{ product.get_final_price }} ₽</p>
@@ -108,10 +110,23 @@
 function scrollCarousel(direction) {
     const container = document.getElementById('productCarousel');
     const scrollAmount = 300;
-    container.scrollBy({
-        left: direction * scrollAmount,
-        behavior: 'smooth'
-    });
+    if (container) {
+        container.scrollBy({
+            left: direction * scrollAmount,
+            behavior: 'smooth'
+        });
+    }
 }
+
+// Автоматическая прокрутка при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('productCarousel');
+    if (container && container.children.length > 0) {
+        // Небольшая задержка для корректного отображения
+        setTimeout(() => {
+            container.scrollLeft = 0;
+        }, 100);
+    }
+});
 </script>
 {% endblock %}
