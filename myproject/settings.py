@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 # myproject/settings.py
+import dj_database_url
 import os
 import sys
 from pathlib import Path
@@ -87,14 +88,21 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    # Railway PostgreSQL
-    import dj_database_url
+    # Настройка для Railway PostgreSQL
     DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True
-        )
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': config('DATABASE_NAME', default='railway'),
+            'USER': config('DATABASE_USER', default='postgres'),
+            'PASSWORD': config('DATABASE_PASSWORD', default=''),
+            'HOST': config('DATABASE_HOST', default='postgres.railway.internal'),
+            'PORT': config('DATABASE_PORT', default='5432'),
+            'CONN_MAX_AGE': 0,
+            'OPTIONS': {
+                'sslmode': 'disable',  # Временно для теста
+                'connect_timeout': 10,
+            },
+        }
     }
     print("✅ Connected to PostgreSQL on Railway")
 else:
