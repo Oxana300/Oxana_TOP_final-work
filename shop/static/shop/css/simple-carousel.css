@@ -1,6 +1,5 @@
 /* simple-carousel.css */
 .product-carousel {
-    position: relative;
     margin: 3rem 0;
     padding: 2rem 0;
     background: linear-gradient(135deg, #f5f5f5 0%, #e8f5e9 100%);
@@ -10,14 +9,22 @@
 
 .carousel-container {
     position: relative;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: 20px 0;
+    scroll-behavior: smooth;
+    cursor: grab;
+}
+
+.carousel-container:active {
+    cursor: grabbing;
 }
 
 .carousel-track {
     display: flex;
-    transition: transform 0.5s ease-in-out;
     gap: 20px;
+    width: max-content;
+    padding: 0 20px;
 }
 
 .carousel-slide {
@@ -59,40 +66,56 @@
     font-size: 1.1rem;
 }
 
-.carousel-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(46, 125, 50, 0.8);
+/* Скрываем скроллбар но оставляем функционал */
+.carousel-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.carousel-container::-webkit-scrollbar-track {
+    background: #e8f5e9;
+    border-radius: 10px;
+}
+
+.carousel-container::-webkit-scrollbar-thumb {
+    background: #2e7d32;
+    border-radius: 10px;
+}
+
+.carousel-container::-webkit-scrollbar-thumb:hover {
+    background: #1b5e20;
+}
+
+/* Кнопки навигации */
+.carousel-nav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.carousel-nav-btn {
+    background: #2e7d32;
     color: white;
     border: none;
-    width: 45px;
-    height: 45px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 20px;
+    font-size: 18px;
     transition: all 0.3s ease;
-    z-index: 10;
 }
 
-.carousel-btn:hover {
+.carousel-nav-btn:hover {
     background: #1b5e20;
-    transform: translateY(-50%) scale(1.1);
+    transform: scale(1.1);
 }
 
-.carousel-prev {
-    left: 15px;
-}
-
-.carousel-next {
-    right: 15px;
-}
-
+/* Точки навигации */
 .carousel-dots {
     display: flex;
     justify-content: center;
     gap: 10px;
-    margin-top: 20px;
+    margin-top: 15px;
 }
 
 .carousel-dot {
