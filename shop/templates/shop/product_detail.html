@@ -30,33 +30,27 @@
                 </div>
                 
                 <hr>
-                
+                        <!-- изображений товара -->
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <div id="productImages" class="carousel slide" data-bs-ride="carousel">
                             <div class="carousel-inner">
-                                {% if product.images.all %}
-                                {% for image in product.images.all %}
-                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text }}">
-                                </div>
-                                {% endfor %}
-                                {% else %}
-                                <div class="carousel-item active">
-                                    <div class="bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
-                                        <span class="text-muted">Изображение отсутствует</span>
-                                    </div>
-                                </div>
-                                {% endif %}
+                                {% load static %}
+                                {% with product.slug as slug %}
+                                    {% for img in product_images %}
+                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                            {% load static %}
+                                            <img src="{% static img %}" class="d-block w-100" alt="{{ product.name }}">
+                                        </div>
+                                    {% endfor %}
+                                {% endwith %}
                             </div>
-                            {% if product.images.all|length > 1 %}
                             <button class="carousel-control-prev" type="button" data-bs-target="#productImages">
                                 <span class="carousel-control-prev-icon"></span>
                             </button>
                             <button class="carousel-control-next" type="button" data-bs-target="#productImages">
                                 <span class="carousel-control-next-icon"></span>
                             </button>
-                            {% endif %}
                         </div>
                     </div>
                     

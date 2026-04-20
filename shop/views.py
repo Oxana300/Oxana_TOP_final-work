@@ -1,6 +1,7 @@
 """
 Представления для приложения магазина
 """
+import os
 import logging
 from django.db import models
 from django.shortcuts import render, get_object_or_404, redirect
@@ -136,31 +137,23 @@ class ProductDetailView(DetailView):
     model = Product
     template_name = 'shop/product_detail.html'
     context_object_name = 'product'
-    slug_field = 'slug'
-    slug_url_kwarg = 'slug'
-
-    def get_queryset(self):
-        return Product.published.select_related('category').prefetch_related('tags', 'images', 'reviews')
-
+    
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         product = self.object
         
-        # Похожие товары из той же категории
-        context['related_products'] = Product.published.filter(
-            category=product.category
-        ).exclude(id=product.id)[:4]
+        # Путь к папке с фото товара
+        product_images_path = os.path.join(settings.BASE_DIR, 'shop', 'static', 'shop', 'images', 'products', product.slug)
         
-        # Форма отзыва
-        context['review_form'] = ProductReviewForm()
+        # Получаем все PNG файлы в папке
+        product_images = []
+        if os.path.exists(product_images_path):
+            for file in sorted(os.listdir(product_images_path)):
+                if file.endswith('.png'):
+                    product_images.append(f'shop/images/products/{product.slug}/{file}')
         
-        # Средний рейтинг
-        if product.reviews.exists():
-            avg_rating = product.reviews.aggregate(
-                models.Avg('rating')
-            )['rating__avg']
-            context['average_rating'] = round(avg_rating, 1)
-        
+        context['product_images'] = product_images
         return context
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
