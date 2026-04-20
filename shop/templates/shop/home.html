@@ -4,7 +4,114 @@
 {% block title %}Главная - Магазин{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'shop/css/simple-carousel.css' %}">
+<style>
+/* Стили карусели прямо здесь, без отдельного файла */
+.product-carousel {
+    margin: 3rem 0;
+    padding: 2rem 0;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8f5e9 100%);
+    border-radius: 20px;
+}
+
+.carousel-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 20px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.carousel-track {
+    display: flex;
+    gap: 20px;
+    width: max-content;
+}
+
+.carousel-slide {
+    flex: 0 0 280px;
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.carousel-slide:hover {
+    transform: translateY(-10px);
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+
+.carousel-slide-info {
+    padding: 15px;
+    text-align: center;
+}
+
+.carousel-slide-info h4 {
+    margin: 0 0 5px;
+    font-size: 1rem;
+    color: #333;
+}
+
+.carousel-slide-info p {
+    margin: 0;
+    color: #2e7d32;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.carousel-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.carousel-container::-webkit-scrollbar-track {
+    background: #e8f5e9;
+    border-radius: 10px;
+}
+
+.carousel-container::-webkit-scrollbar-thumb {
+    background: #2e7d32;
+    border-radius: 10px;
+}
+
+.carousel-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.carousel-btn {
+    background: #2e7d32;
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+}
+
+.carousel-btn:hover {
+    background: #1b5e20;
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .carousel-slide {
+        flex: 0 0 220px;
+    }
+    .carousel-slide img {
+        height: 150px;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -47,9 +154,9 @@
                 {% endfor %}
             </div>
         </div>
-        <div class="carousel-nav">
-            <button class="carousel-nav-btn" onclick="scrollCarousel(-1)">←</button>
-            <button class="carousel-nav-btn" onclick="scrollCarousel(1)">→</button>
+        <div class="carousel-buttons">
+            <button class="carousel-btn" onclick="scrollCarousel(-1)">←</button>
+            <button class="carousel-btn" onclick="scrollCarousel(1)">→</button>
         </div>
     </div>
 </div>
@@ -109,8 +216,8 @@
 <script>
 function scrollCarousel(direction) {
     const container = document.getElementById('productCarousel');
-    const scrollAmount = 300;
     if (container) {
+        const scrollAmount = 300;
         container.scrollBy({
             left: direction * scrollAmount,
             behavior: 'smooth'
@@ -118,15 +225,8 @@ function scrollCarousel(direction) {
     }
 }
 
-// Автоматическая прокрутка при загрузке
 document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('productCarousel');
-    if (container && container.children.length > 0) {
-        // Небольшая задержка для корректного отображения
-        setTimeout(() => {
-            container.scrollLeft = 0;
-        }, 100);
-    }
+    console.log('Карусель инициализирована');
 });
 </script>
 {% endblock %}
