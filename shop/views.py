@@ -52,15 +52,21 @@ PRODUCT_IMAGES = {
 }
 
 class HomePageView(TemplateView):
+    """Главная страница магазина"""
+    template_name = 'shop/home.html'  # Обязательно!
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        products = Product.published.filter(is_featured=True)[:6]
-        
-        for product in products:
-            product.image_path = PRODUCT_IMAGES.get(product.slug, 'default-product.png')
-        
-        context['featured_products'] = products
-        context['carousel_products'] = Product.published.order_by('?')[:12]
+        # Рекомендуемые товары
+        context['featured_products'] = Product.published.filter(is_featured=True)[:6]
+        # Новинки
+        context['new_products'] = Product.published.order_by('-created_at')[:8]
+        # Категории
+        context['categories'] = Category.objects.all()[:6]
+        # Товары для карусели
+        context['carousel_products'] = Product.published.filter(
+            images__isnull=False
+        ).distinct().order_by('?')[:12]
         return context
     
 class ProductListView(ListView):
