@@ -39,24 +39,28 @@ from .utils import sanitize_text
 # ✅ Инициализация логгера
 logger = logging.getLogger(__name__)
 
-
+# В начало файла, после импортов
+PRODUCT_IMAGES = {
+    'mikrozelen-brokkoli': 'brokkoli.png',
+    'mikrozelen-gorchitsa': 'gorchitsa.png',
+    'mikrozelen-kolrabi': 'kolrabi.png',
+    'mikrozelen-podsolnechnik': 'podsoln.png',
+    'mikrozelen-redis-daykon': 'redis-daykon.png',
+    'mikrozelen-shpinat': 'shpinat.png',
+    'mikrozelen-shavel': 'shavel.png',
+    'mikrozelen-amarant': 'amaranth.png',
+}
 
 class HomePageView(TemplateView):
-    """Главная страница магазина"""
-    template_name = 'shop/home.html'
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Рекомендуемые товары
-        context['featured_products'] = Product.published.filter(is_featured=True)[:6]
-        # Новинки
-        context['new_products'] = Product.published.order_by('-created_at')[:8]
-        # Категории
-        context['categories'] = Category.objects.all()[:6]
-        # Товары для карусели (рандомные, с фото)
-        context['carousel_products'] = Product.published.filter(
-            images__isnull=False  # Только товары с фото
-        ).distinct().order_by('?')[:12]  # Рандомно, до 12 товаров
+        products = Product.published.filter(is_featured=True)[:6]
+        
+        for product in products:
+            product.image_path = PRODUCT_IMAGES.get(product.slug, 'default-product.png')
+        
+        context['featured_products'] = products
+        context['carousel_products'] = Product.published.order_by('?')[:12]
         return context
     
 class ProductListView(ListView):

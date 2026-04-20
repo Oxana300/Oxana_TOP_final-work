@@ -1,30 +1,23 @@
-/* simple-carousel.css */
+/* Простая горизонтальная прокрутка */
 .product-carousel {
     margin: 3rem 0;
     padding: 2rem 0;
     background: linear-gradient(135deg, #f5f5f5 0%, #e8f5e9 100%);
     border-radius: 20px;
-    overflow: hidden;
 }
 
 .carousel-container {
-    position: relative;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 20px 0;
+    padding: 20px;
     scroll-behavior: smooth;
-    cursor: grab;
-}
-
-.carousel-container:active {
-    cursor: grabbing;
+    -webkit-overflow-scrolling: touch;
 }
 
 .carousel-track {
     display: flex;
     gap: 20px;
     width: max-content;
-    padding: 0 20px;
 }
 
 .carousel-slide {
@@ -39,7 +32,6 @@
 
 .carousel-slide:hover {
     transform: translateY(-10px);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
 }
 
 .carousel-slide img {
@@ -66,7 +58,7 @@
     font-size: 1.1rem;
 }
 
-/* Скрываем скроллбар но оставляем функционал */
+/* Красивый скроллбар */
 .carousel-container::-webkit-scrollbar {
     height: 8px;
 }
@@ -81,19 +73,15 @@
     border-radius: 10px;
 }
 
-.carousel-container::-webkit-scrollbar-thumb:hover {
-    background: #1b5e20;
-}
-
-/* Кнопки навигации */
-.carousel-nav {
+/* Кнопки */
+.carousel-buttons {
     display: flex;
     justify-content: center;
     gap: 15px;
     margin-top: 20px;
 }
 
-.carousel-nav-btn {
+.carousel-btn {
     background: #2e7d32;
     color: white;
     border: none;
@@ -105,32 +93,9 @@
     transition: all 0.3s ease;
 }
 
-.carousel-nav-btn:hover {
+.carousel-btn:hover {
     background: #1b5e20;
     transform: scale(1.1);
-}
-
-/* Точки навигации */
-.carousel-dots {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 15px;
-}
-
-.carousel-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ccc;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.carousel-dot.active {
-    background: #2e7d32;
-    width: 25px;
-    border-radius: 5px;
 }
 
 @media (max-width: 768px) {

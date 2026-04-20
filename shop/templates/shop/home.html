@@ -137,15 +137,11 @@
             <div class="carousel-track">
                 {% for product in carousel_products %}
                 <div class="carousel-slide" onclick="location.href='{% url 'shop:product_detail' product.slug %}'">
-                    {% with product.images.first as first_image %}
-                        {% if first_image %}
-                            <img src="{{ first_image.image.url }}" alt="{{ product.name }}" loading="lazy">
-                        {% else %}
-                            <div style="height: 200px; background: linear-gradient(135deg, #2e7d32, #1b5e20); display: flex; align-items: center; justify-content: center; font-size: 48px; color: white;">
-                                🌱
-                            </div>
-                        {% endif %}
-                    {% endwith %}
+                    {% load static %}
+                    <img src="{% static 'shop/images/products/' %}{{ product.slug }}.png" 
+                        alt="{{ product.name }}"
+                        onerror="this.src='{% static 'shop/images/default-product.png' %}'"
+                        loading="lazy">
                     <div class="carousel-slide-info">
                         <h4>{{ product.name }}</h4>
                         <p>{{ product.get_final_price }} ₽</p>
