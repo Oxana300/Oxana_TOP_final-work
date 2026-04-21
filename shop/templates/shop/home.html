@@ -17,37 +17,60 @@
     </div>
 </div>
 
-<!-- Простая карусель из фото -->
+<!-- Карусель товаров -->
 <div class="product-carousel">
     <div class="container">
         <h2 class="text-center mb-4">🌟 Наша продукция</h2>
         <div class="carousel-container" id="productCarousel">
             <div class="carousel-track">
                 {% load static %}
-                <!-- Фото из папки products -->
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/amaranth.jpg' %}" alt="Амарант" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Амарант'">
+                    <img src="{% static 'shop/images/products/amaranth.png' %}" alt="Амарант" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Амарант'">
+                    <div class="carousel-slide-info">
+                        <h4>Амарант</h4>
+                    </div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/brokkoli.jpg' %}" alt="Брокколи" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Брокколи'">
+                    <img src="{% static 'shop/images/products/brokkoli.png' %}" alt="Брокколи" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Брокколи'">
+                    <div class="carousel-slide-info">
+                        <h4>Брокколи</h4>
+                    </div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/gorchitsa.jpg' %}" alt="Горчица" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Горчица'">
+                    <img src="{% static 'shop/images/products/gorchitsa.png' %}" alt="Горчица" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Горчица'">
+                    <div class="carousel-slide-info">
+                        <h4>Горчица</h4>
+                    </div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/kolrabi.jpg' %}" alt="Кольраби" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Кольраби'">
+                    <img src="{% static 'shop/images/products/kolrabi.png' %}" alt="Кольраби" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Кольраби'">
+                    <div class="carousel-slide-info">
+                        <h4>Кольраби</h4>
+                    </div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/podsoln.jpg' %}" alt="Подсолнечник" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Подсолнечник'">
+                    <img src="{% static 'shop/images/products/podsoln.png' %}" alt="Подсолнечник" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Подсолнечник'">
+                    <div class="carousel-slide-info">
+                        <h4>Подсолнечник</h4>
+                    </div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/redis-daykon.jpg' %}" alt="Редис Дайкон" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Редис Дайкон'">
+                    <img src="{% static 'shop/images/products/redis-daykon.png' %}" alt="Редис Дайкон" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Редис Дайкон'">
+                    <div class="carousel-slide-info">
+                        <h4>Редис Дайкон</h4>
+                    </div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/shpinat.jpg' %}" alt="Шпинат" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Шпинат'">
+                    <img src="{% static 'shop/images/products/shpinat.png' %}" alt="Шпинат" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Шпинат'">
+                    <div class="carousel-slide-info">
+                        <h4>Шпинат</h4>
+                    </div>
                 </div>
                 <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/shavel.jpg' %}" alt="Щавель" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Щавель'">
+                    <img src="{% static 'shop/images/products/shavel.png' %}" alt="Щавель" onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Щавель'">
+                    <div class="carousel-slide-info">
+                        <h4>Щавель</h4>
+                    </div>
                 </div>
             </div>
         </div>
@@ -58,54 +81,17 @@
     </div>
 </div>
 
-<!-- Рекомендуемые товары -->
-{% if featured_products %}
-<div class="mb-5">
-    <h2 class="mb-4">🌟 Рекомендуем</h2>
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for product in featured_products %}
-        <div class="col">
-            <div class="card product-card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ product.name }}</h5>
-                    <p class="card-text text-muted">{{ product.category.name }}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="fs-4 fw-bold text-primary">
-                            {{ product.get_final_price }} ₽
-                        </span>
-                    </div>
-                    <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-primary mt-3">
-                        Подробнее →
-                    </a>
-                </div>
-            </div>
+<!-- Описание (черный шрифт) -->
+<div class="row my-5">
+    <div class="col-12">
+        <div class="description-text" style="color: #000; background: rgba(255,255,255,0.8); padding: 30px; border-radius: 15px;">
+            <h2 class="text-center mb-4">🌱 Что такое микрозелень?</h2>
+            <p>Микрозелень — это молодые растения в фазе первых настоящих листьев. Она содержит в 5-10 раз больше полезных веществ, чем взрослые растения!</p>
+            <p>Наша микрозелень выращивается без химических удобрений и пестицидов. Мы используем только качественные семена и экологически чистые субстраты.</p>
+            <p>Доставка осуществляется в день сбора урожая, чтобы вы получили максимум пользы и свежести!</p>
         </div>
-        {% endfor %}
     </div>
 </div>
-{% endif %}
-
-<!-- Категории -->
-{% if categories %}
-<div>
-    <h2 class="mb-4">📂 Категории</h2>
-    <div class="row row-cols-2 row-cols-md-3 g-3">
-        {% for category in categories %}
-        <div class="col">
-            <a href="{% url 'shop:product_list_by_category' category.slug %}" 
-               class="card text-decoration-none text-dark h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">{{ category.name }}</h5>
-                    <p class="card-text text-muted small">
-                        {{ category.get_product_count }} товаров
-                    </p>
-                </div>
-            </a>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
 {% endblock %}
 
 {% block extra_js %}

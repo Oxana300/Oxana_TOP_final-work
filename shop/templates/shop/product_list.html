@@ -73,36 +73,32 @@
             <div class="col">
                 <div class="card h-100">
                     <div class="card-body">
-                        {% if product.is_featured %}
-                        <span class="badge bg-success position-absolute top-0 end-0 m-2">Рекомендуем</span>
-                        {% endif %}
-                        
+                        <!-- Фото товара -->
+                        {% load static %}
+                        {% with product.slug|cut:"mikrozelen-" as short_slug %}
+                        <img src="{% static 'shop/images/products/'|add:short_slug|add:'.png' %}" 
+                            alt="{{ product.name }}"
+                            style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;"
+                            onerror="this.src='https://placehold.co/280x150/2e7d32/white?text=🌱'">
+                        {% endwith %}
+            
                         <h5 class="card-title">{{ product.name }}</h5>
                         <p class="card-text text-muted small">{{ product.category.name }}</p>
-                        
-                        <div class="mb-3">
-                            {% if product.tags.all %}
-                            {% for tag in product.tags.all|slice:":3" %}
-                            <span class="badge bg-secondary me-1">{{ tag.name }}</span>
-                            {% endfor %}
-                            {% endif %}
-                        </div>
-                        
+            
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="fs-5 fw-bold text-primary">
-                                ₽{{ product.get_final_price }}
+                                {{ product.get_final_price }} ₽
                             </span>
                             {% if product.discount_price %}
                             <span class="text-decoration-line-through text-muted">
-                                ₽{{ product.price }}
+                                {{ product.price }} ₽
                             </span>
                             {% endif %}
                         </div>
-                        
+            
                         <div class="d-grid gap-2">
-                            <a href="{% url 'shop:product_detail' product.slug %}" 
-                                class="btn btn-outline-primary">
-                                 Подробнее
+                            <a href="{% url 'shop:product_detail' product.slug %}" class="btn btn-outline-primary">
+                                Подробнее
                             </a>
                             <form method="post" action="{% url 'shop:add_to_cart' product.slug %}">
                                 {% csrf_token %}
