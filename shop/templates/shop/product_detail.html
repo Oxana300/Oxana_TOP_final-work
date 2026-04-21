@@ -39,7 +39,6 @@
                                 {% with product.slug as slug %}
                                     {% for img in product_images %}
                                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                            {% load static %}
                                             <img src="{% static img %}" class="d-block w-100" alt="{{ product.name }}">
                                         </div>
                                     {% endfor %}
