@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = config('TELEGRAM_BOT_TOKEN')
 
-SITE_URL = config('SITE_URL', default = 'https://web-production-b552f.up.railway.app/')
+SITE_URL = config('SITE_URL', default = 'https://web-production-48e.up.railway.app/')
+# Railway URL
 
 bot = Bot(token = BOT_TOKEN)
 dp = Dispatcher()
@@ -68,18 +69,26 @@ async def cmd_start(message:types.Message):
     
     if created:
         text = (
-            f'<b>👋 Добро пожаловать, {message.from_user.first_name}!</b>\n\n'
-            f'Я бот магазина Django.\n\n'
-            f'<b>Что я умею:</b>\n'
-            f'- Показывать товары'
-            f'- Отслеживать заказы'
-            f'- Присылать уведомления'
+            f"<b>👋 Добро пожаловать, {message.from_user.first_name}!</b>\n\n"
+            f"Я бот интернет-магазина «Полезная микрозелень».\n\n"
+            f"<b>Что я умею:</b>\n"
+            f"• 🛒 Открыть магазин\n"
+            f"• 📦 Проверить статус заказа\n"
+            f"• 👤 Показать профиль\n"
+            f"• 🔗 Привязать аккаунт на сайте\n\n"
+            f"Используйте кнопки ниже или команды:\n"
+            f"/start - запустить бота\n"
+            f"/help - справка\n"
+            f"/profile - мой профиль\n"
+            f"/status - статус заказа"
         )
     else:
         text = (
-            f'<b>С возвращением, {message.from_user.first_name}!</b>\n\n'
-            f'Рад видеть вас снова! 👋'
+            f"<b>С возвращением, {message.from_user.first_name}!</b>\n\n"
+            f"Рад видеть вас снова! 👋\n\n"
+            f"Используйте кнопки ниже для навигации."
         )
+    
     await message.answer(
         text,
         parse_mode= ParseMode.HTML,
@@ -96,18 +105,19 @@ async def cmd_help(message: types.Message):
     Показывает справку по боту
     """
     text = (
-        '<b>📚 Справка по боту</b>\n\n'
-        '<b>Команды:</b>\n'
-        '/start - Запустить бота\n'
-        '/help - Эта справка\n'
-        '/status - Статус последнего заказа\n'
-        '/profile - Мой профиль\n\n'
-        '<b>Кнопки:</b>\n'
-        '🛒 Открыть магазин - Переход на сайт\n'
-        '📦 Статус заказа - Проверить заказ\n'
-        '👤 Мой профиль - Информация о вас\n\n'
-        '<b>Нужна помощь?</b>\n'
-        'Напишите нам: zaykova-oxana@yandex.ru'
+        "<b>📚 Справка по боту</b>\n\n"
+        "<b>Команды:</b>\n"
+        "/start - Запустить бота\n"
+        "/help - Эта справка\n"
+        "/status - Статус последнего заказа\n"
+        "/profile - Мой профиль\n"
+        "/link - Привязать аккаунт (с кодом)\n\n"
+        "<b>Кнопки:</b>\n"
+        "🛒 Открыть магазин - Переход на сайт\n"
+        "📦 Статус заказа - Проверить заказ\n"
+        "👤 Мой профиль - Информация о вас\n\n"
+        "<b>Нужна помощь?</b>\n"
+        "Напишите нам: zaykova-oxana@yandex.ru"
     )
     
     await message.answer(
@@ -116,9 +126,42 @@ async def cmd_help(message: types.Message):
         reply_markup=get_main_keyboard()
     )
     
+@dp.message(Command('profile'))
+async def cmd_profile(message: types.Message):
+    from telegram_bot.models import TelegramUser
+    
+    tg_user, created = TelegramUser.get_or_create_from_telegram(message.from_user)
+    
+    if tg_user.user:
+        linked_text = f"✅ Привязан к аккаунту: <b>{tg_user.user.username}</b>"
+    else:
+        linked_text = (
+            f"❌ <b>Не привязан к аккаунту Django!</b>\n\n"
+            f"Как привязать:\n"
+            f"1. Зайдите на сайт\n"
+            f"2. Перейдите в профиль\n"
+            f"3. Нажмите «Привязать Telegram»\n"
+            f"4. Отправьте полученный код боту: <code>/link КОД</code>"
+        )
+    
+    text = (
+        f"<b>👤 Ваш профиль</b>\n\n"
+        f"<b>Telegram ID:</b> <code>{tg_user.telegram_id}</code>\n"
+        f"<b>Имя:</b> {tg_user.first_name or message.from_user.first_name}\n"
+        f"<b>Username:</b> @{tg_user.username or message.from_user.username}\n"
+        f"<b>В боте с:</b> {tg_user.created_at.strftime('%d.%m.%Y')}\n\n"
+        f"{linked_text}"
+    )
+    
+    await message.answer(
+        text,
+        parse_mode=ParseMode.HTML,
+        reply_markup=get_main_keyboard()
+    )
+
+
 @dp.message(Command('status'))
 async def cmd_status(message: types.Message):
-    """Обработчик команды статус"""
     from telegram_bot.models import TelegramUser
     from shop.models import Order
     
@@ -126,8 +169,8 @@ async def cmd_status(message: types.Message):
         tg_user = TelegramUser.objects.get(telegram_id=message.from_user.id)
     except TelegramUser.DoesNotExist:
         await message.answer(
-            "❌ Вы не зарегистрированы в боте.\n"
-            "Нажмите /start для регистрации"
+            "❌ Вы не зарегистрированы в боте.\nНажмите /start для регистрации",
+            reply_markup=get_main_keyboard()
         )
         return
     
@@ -136,19 +179,22 @@ async def cmd_status(message: types.Message):
             "🔗 Ваш Telegram не привязан к аккаунту!\n\n"
             "1. Зайдите на сайт\n"
             "2. Перейдите в профиль\n"
-            "3. Нажмите 'Привязать Telegram'\n"
-            "4. Отправьте полученный код боту командой:\n"
-            f"<code>/link КОД</code>",
-            parse_mode=ParseMode.HTML
+            "3. Нажмите «Привязать Telegram»\n"
+            "4. Отправьте код боту: /link КОД",
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_main_keyboard()
         )
         return
     
     order = Order.objects.filter(user=tg_user.user).order_by('-created_at').first()
+    
     if not order:
-        await message.answer("📭 У вас пока нет заказов")
+        await message.answer(
+            "📭 У вас пока нет заказов.\nПерейдите в магазин и сделайте первый заказ!",
+            reply_markup=get_main_keyboard()
+        )
         return
     
-    # Исправленный вывод статуса
     status_emoji = {
         'new': '🆕',
         'processing': '🔄',
@@ -161,44 +207,12 @@ async def cmd_status(message: types.Message):
     status_text = dict(Order.STATUS_CHOICES).get(order.status, order.status)
     
     text = (
-        f'<b>📦 Заказ #{order.id}</b>\n\n'
-        f'{status_emoji.get(order.status, "📦")} <b>Статус:</b> {status_text}\n'
-        f'💰 <b>Сумма:</b> {order.total_price} руб\n'
-        f'📅 <b>Дата:</b> {order.created_at.strftime("%d.%m.%Y %H:%M")}\n'
-        f'📍 <b>Адрес:</b> {order.address}\n\n'
-        f'🔍 Детали заказа доступны на сайте'
-    )
-    
-    await message.answer(
-        text, 
-        parse_mode=ParseMode.HTML, 
-        reply_markup=get_main_keyboard()
-        )
-    
-        
-@dp.message(Command('profile'))
-async def cmd_profile(message: types.Message):
-    """
-    Обработчик команды profile
-    Показывает информацию о профиле
-    """
-    from telegram_bot.models import TelegramUser
-    
-    tg_user, created = TelegramUser.get_or_create_from_telegram(message.from_user)
-    
-    if tg_user.user:
-        django_user = tg_user.user
-        linked_text = f'Привязан к аккаунту: {django_user.username}'
-    else: 
-        linked_text = f'Не привязан к аккаунту Django'
-        
-    text = (
-        f'<b>Ваш профиль:</b>\n\n'
-        f'<b>Telegram ID:</b> <code>{tg_user.telegram_id}</code>\n'
-        f'<b>Имя:</b> {tg_user.first_name or message.from_user.first_name}\n'
-        f'<b>Username: </b>@{tg_user.username or message.from_user.username}\n'
-        f'<b>В боте с:</b> {tg_user.created_at.strftime("%d.%m.%Y")}\n\n'
-        f'{linked_text}'
+        f"<b>📦 Заказ #{order.id}</b>\n\n"
+        f"{status_emoji.get(order.status, '📦')} <b>Статус:</b> {status_text}\n"
+        f"💰 <b>Сумма:</b> {order.total_price} ₽\n"
+        f"📅 <b>Дата:</b> {order.created_at.strftime('%d.%m.%Y %H:%M')}\n"
+        f"📍 <b>Адрес:</b> {order.address}\n\n"
+        f"🔍 Подробности заказа доступны на сайте"
     )
     
     await message.answer(
@@ -207,84 +221,50 @@ async def cmd_profile(message: types.Message):
         reply_markup=get_main_keyboard()
     )
 
+
 @dp.message(Command('link'))
 async def cmd_link(message: types.Message):
-    """
-    Обработчик команды /link для привязки аккаунта
-    
-    Пользователь отправляет код который получил на сайте
-    """
     from telegram_bot.models import TelegramLinkCode, TelegramUser
     from django.utils import timezone
     
-    # Проверяем есть ли текст после команды
     if not message.text or len(message.text.split()) < 2:
         await message.answer(
             "❌ Пожалуйста, отправьте код после команды:\n\n"
-            f"<code>/link {code}</code>\n\n"
+            f"<code>/link КОД</code>\n\n"
             f"Код можно получить в личном кабинете на сайте.",
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_main_keyboard()
         )
         return
     
-    # Получаем код
     code = message.text.split()[1].upper()
     
-    # Ищем код в базе
     try:
         link_code = TelegramLinkCode.objects.get(code=code)
     except TelegramLinkCode.DoesNotExist:
         await message.answer(
-            "❌ Код не найден!\n\n"
-            "Проверьте правильность кода или запросите новый в личном кабинете."
-        )
-        return
-    
-    # Проверяем статус
-    if link_code.status == 'confirmed':
-        await message.answer(
-            "⚠️ Этот код уже был использован!\n\n"
-            "Запросите новый код в личном кабинете."
-        )
-        return
-    
-    if link_code.status == 'expired':
-        await message.answer(
-            "⌛ Срок действия кода истёк!\n\n"
-            "Запросите новый код в личном кабинете."
+            "❌ Код не найден!\n\nПроверьте правильность кода или запросите новый.",
+            reply_markup=get_main_keyboard()
         )
         return
     
     if not link_code.is_valid():
         await message.answer(
-            "⌛ Код больше не действителен!\n\n"
-            "Запросите новый код в личном кабинете."
+            "⌛ Код истёк или уже использован!\n\nЗапросите новый код в личном кабинете.",
+            reply_markup=get_main_keyboard()
         )
         return
     
-    # Проверяем не привязан ли уже этот Telegram
-    existing_link = TelegramUser.objects.filter(
-        telegram_id=message.from_user.id
-    ).first()
-    
-    if existing_link and existing_link.user:
-        await message.answer(
-            f"✅ Ваш Telegram уже привязан к аккаунту {existing_link.user.username}!"
-        )
-        return
-    
-    # Привязываем аккаунты!
+    # Привязываем аккаунты
     telegram_user, created = TelegramUser.get_or_create_from_telegram(message.from_user)
     telegram_user.user = link_code.user
     telegram_user.save()
     
-    # Обновляем код
     link_code.status = 'confirmed'
     link_code.telegram_id = message.from_user.id
     link_code.confirmed_at = timezone.now()
     link_code.save()
     
-    # Поздравляем!
     await message.answer(
         f"🎉 <b>Аккаунты успешно привязаны!</b>\n\n"
         f"👤 <b>Ваш аккаунт:</b> {link_code.user.username}\n"
@@ -294,82 +274,62 @@ async def cmd_link(message: types.Message):
         reply_markup=get_main_keyboard()
     )
     
-    # Уведомляем пользователя на сайте (можно добавить в будущем)
     logger.info(f"Telegram {message.from_user.id} linked to user {link_code.user.username}")
 
-    
+
+# ✅ Обработка кнопок (текстовые команды)
+@dp.message(lambda message: message.text == "📦 Статус заказа")
+async def button_status(message: types.Message):
+    await cmd_status(message)
+
+
+@dp.message(lambda message: message.text == "👤 Мой профиль")
+async def button_profile(message: types.Message):
+    await cmd_profile(message)
+
+
+@dp.message(lambda message: message.text == "❓ Помощь")
+async def button_help(message: types.Message):
+    await cmd_help(message)
+
+
+# ✅ ЭТОТ ОБРАБОТЧИК ДОЛЖЕН БЫТЬ ПОСЛЕДНИМ!
 @dp.message()
-async def echo_handler(message:types.Message):
-    """
-    Обработчик всех остальных команд/сообщений (эхо заглушка)
-    """
-    # Если данные из WebApp
+async def echo_handler(message: types.Message):
+    # Игнорируем команды, которые уже обработаны
+    if message.text and message.text.startswith('/'):
+        return
+    
+    # Если это сообщение от WebApp
     if message.web_app_data:
         await message.answer(
-            f'Данные получены!\n\n'
-            f'<code>{message.web_app_data.data}</code>',
-            parse_mode=ParseMode.HTML
+            f"Данные получены!",
+            parse_mode=ParseMode.HTML,
+            reply_markup=get_main_keyboard()
         )
         return
     
-    if message.text and message.text.upper().startswith('TG-'):
-        # Автоматически пытаемся привязать
-        from telegram_bot.models import TelegramLinkCode, TelegramUser
-        from django.utils import timezone
-        
-        code = message.text.upper().strip()
-        
-        try:
-            link_code = TelegramLinkCode.objects.get(code=code)
-            
-            if link_code.is_valid():
-                # Привязываем
-                telegram_user, created = TelegramUser.get_or_create_from_telegram(message.from_user)
-                telegram_user.user = link_code.user
-                telegram_user.save()
-                
-                link_code.status = 'confirmed'
-                link_code.telegram_id = message.from_user.id
-                link_code.confirmed_at = timezone.now()
-                link_code.save()
-                
-                await message.answer(
-                    f"🎉 <b>Аккаунты успешно привязаны!</b>\n\n"
-                    f"👤 <b>Ваш аккаунт:</b> {link_code.user.username}\n\n"
-                    f"Теперь вы будете получать уведомления о заказах!",
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=get_main_keyboard()
-                )
-                return
-        except:
-            pass    
-    
-    # Обычное сообщение
+    # Всё остальное
     await message.answer(
-        f'Вы написали: {message.text}'
-        f'Используйте кнопки внизу для навигации',
-        parse_mode= ParseMode.HTML,
-        reply_to = message.message_id,
+        f"❓ Неизвестная команда.\n\nИспользуйте кнопки внизу или /help для списка команд.",
+        parse_mode=ParseMode.HTML,
         reply_markup=get_main_keyboard()
     )
 
 
-
 async def main():
-    """
-    Главная функция запуска бота
-    """
-    logger.info("Бот запущен")
-    # Запускаем polling (пулинг) (опрос серверов Telegram)    
-    await dp.start_polling(bot, skip_updates = True)
+    logger.info("🤖 Telegram бот запущен!")
+    await dp.start_polling(bot, skip_updates=True)
+
 
 if __name__ == '__main__':
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Бот остановлен пользователем")
+        print("\n❌ Бот остановлен пользователем")
     finally:
-        bot.session.close()
-        
-        
-    
+        try:
+            if 'bot' in locals() and bot:
+                asyncio.run(bot.session.close())
+        except:
+            pass

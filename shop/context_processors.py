@@ -1,4 +1,6 @@
-from .models import Category, Tag, SupportTicket
+from .models import Category, Tag, SupportTicket, Cart, CartItem
+from django.db.models import Sum
+
 
 def shop_context(request):
     '''Добавляет в контекст категории и теги'''

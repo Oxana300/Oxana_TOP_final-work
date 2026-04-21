@@ -19,6 +19,7 @@ from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
 from django.utils.html import strip_tags  #  Добавлен импорт
+from decimal import Decimal
 
 from .models import (
     Product, Category, Tag, ProductReview, 
@@ -899,6 +900,10 @@ def create_order(request):
     if request.method == 'POST':
         cart = get_cart(request)
         
+        if not cart.items.exists():
+            messages.error(request, 'Корзина пуста!')
+            return redirect('shop:cart')
+        
         # Создаем заказ
         order = Order.objects.create(
             user=request.user if request.user.is_authenticated else None,
@@ -909,25 +914,38 @@ def create_order(request):
             postal_code=request.POST.get('postal_code', ''),
             payment_method=request.POST.get('payment_method', 'card'),
             delivery_method=request.POST.get('delivery_method', 'courier'),
-            comment=request.POST.get('comment', '')
+            comment=request.POST.get('comment', ''),
+            discount=Decimal('0.00')  # ✅ Явно указываем Decimal
         )
         
-        # Переносим товары из корзины в заказ
+        # Переносим товары
+        total = Decimal('0.00')
         for cart_item in cart.items.all():
+            item_price = cart_item.product.get_final_price()
+            subtotal = item_price * cart_item.quantity
+            
             OrderItem.objects.create(
                 order=order,
                 product=cart_item.product,
                 quantity=cart_item.quantity,
-                price=cart_item.product.get_final_price()
+                price=item_price,
+                subtotal=subtotal
             )
+            total += subtotal
+        
+        # Обновляем суммы
+        order.total_price = total
+        order.final_price = total  # без скидки пока
+        order.save()
         
         # Очищаем корзину
-        cart.clear()
+        cart.items.all().delete()
         
         messages.success(request, f'Заказ #{order.id} успешно оформлен!')
         return redirect('shop:order_confirmation', order_id=order.id)
     
     return redirect('shop:cart')
+
 
 def order_confirmation(request, order_id):
     """Страница подтверждения заказа"""

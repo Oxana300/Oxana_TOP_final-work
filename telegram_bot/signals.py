@@ -17,17 +17,16 @@ def order_created_signal(sender,instance,created, **kwargs):
     '''
     
     if created:
-        # Новый заказ- уведомление админам
         notify_admins_about_order(instance)
         
-        # Уведомление пользователям
         if instance.user:
-            notify_user_about_order_status(instance.user, instance)
-    
+            # ✅ Правильно: передаем только заказ (user есть внутри instance)
+            notify_user_about_order_status(instance)
     else:
-        # Заказ обновился - проверяем статус
         if instance.pk:
             old_order = Order.objects.get(pk=instance.pk)
             if old_order.status != instance.status:
                 if instance.user:
-                    notify_user_about_order_status(instance.user, instance)
+                    # ✅ Правильно: передаем только заказ
+                    notify_user_about_order_status(instance)
+                    

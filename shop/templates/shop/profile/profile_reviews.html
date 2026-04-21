@@ -1,0 +1,71 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Мои отзывы - Магазин{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Мой профиль</h5>
+                    <div class="list-group">
+                        <a href="{% url 'shop:profile' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-person"></i> Общая информация
+                        </a>
+                        <a href="{% url 'shop:profile_orders' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-box"></i> Мои заказы
+                        </a>
+                        <a href="{% url 'shop:profile_reviews' %}" class="list-group-item list-group-item-action active">
+                            <i class="bi bi-star"></i> Мои отзывы
+                        </a>
+                        <a href="{% url 'shop:profile_tickets' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-headset"></i> Обращения
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Мои отзывы</h4>
+                </div>
+                <div class="card-body">
+                    {% if reviews %}
+                        {% for review in reviews %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'shop:product_detail' review.product.slug %}" class="fw-bold">
+                                    {{ review.product.name }}
+                                </a>
+                                <small class="text-muted">{{ review.created_at|date:"d.m.Y" }}</small>
+                            </div>
+                            <div class="mb-2">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= review.rating %}
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    {% else %}
+                                        <i class="bi bi-star text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <p class="mb-0">{{ review.comment }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-chat-dots display-1 text-muted"></i>
+                            <p class="mt-3">Вы еще не оставили ни одного отзыва</p>
+                            <a href="{% url 'shop:product_list' %}" class="btn btn-primary">
+                                Оставить отзыв
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

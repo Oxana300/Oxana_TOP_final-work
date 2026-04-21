@@ -1,0 +1,74 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Мои обращения - Магазин{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Мой профиль</h5>
+                    <div class="list-group">
+                        <a href="{% url 'shop:profile' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-person"></i> Общая информация
+                        </a>
+                        <a href="{% url 'shop:profile_orders' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-box"></i> Мои заказы
+                        </a>
+                        <a href="{% url 'shop:profile_reviews' %}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-star"></i> Мои отзывы
+                        </a>
+                        <a href="{% url 'shop:profile_tickets' %}" class="list-group-item list-group-item-action active">
+                            <i class="bi bi-headset"></i> Обращения
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Мои обращения</h4>
+                    <a href="{% url 'shop:ticket_create' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Новое обращение
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if tickets %}
+                        <div class="list-group">
+                            {% for ticket in tickets %}
+                            <a href="{% url 'shop:ticket_detail' ticket.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">#{{ ticket.id }} - {{ ticket.subject }}</h6>
+                                        <small class="text-muted">
+                                            {{ ticket.created_at|date:"d.m.Y H:i" }} | 
+                                            {{ ticket.get_category_display }}
+                                        </small>
+                                    </div>
+                                    <div>
+                                        <span class="badge {% if ticket.status == 'new' %}bg-warning{% elif ticket.status == 'in_progress' %}bg-info{% elif ticket.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ ticket.get_status_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-envelope display-1 text-muted"></i>
+                            <p class="mt-3">У вас пока нет обращений в поддержку</p>
+                            <a href="{% url 'shop:ticket_create' %}" class="btn btn-primary">
+                                Создать обращение
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

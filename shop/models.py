@@ -842,8 +842,13 @@ class Order(models.Model):
         """
         Автоматически рассчитывает итоговую сумму
         """
-        # Считаем сумму товаров
-        self.total_price = sum(item.get_subtotal() for item in self.items.all())
+        # ✅ ПРОВЕРКА: Если объект еще не сохранен - не считаем items
+        if self.pk:
+            # Объект уже в БД, можно считать связанные items
+            self.total_price = sum(item.get_subtotal() for item in self.items.all())
+        else:
+            # Новый объект - пока оставляем 0
+            self.total_price = 0
         
         # Применяем скидку
         self.final_price = self.total_price - self.discount
@@ -922,7 +927,9 @@ class OrderItem(models.Model):
         """
         Автоматически рассчитывает сумму позиции
         """
-        self.subtotal = self.price * self.quantity
+        # ✅ Тоже добавила проверку
+        if self.pk or self.order_id:
+            self.subtotal = self.price * self.quantity
         super().save(*args, **kwargs)
     
     def get_subtotal(self):

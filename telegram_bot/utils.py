@@ -68,7 +68,7 @@ def notify_admins_about_order(order):
     except Exception as e:
         logger.error(f"Ошибка при уведомлении админов о заказе #{order.id}: {e}")
 
-def notify_user_about_order_status(order):
+def notify_user_about_order_status(order):  # ✅ 1 аргумент
     """Уведомление пользователя об изменении статуса заказа"""
     try:
         from asgiref.sync import async_to_sync
@@ -78,27 +78,17 @@ def notify_user_about_order_status(order):
         bot_token = config('TELEGRAM_BOT_TOKEN')
         bot = Bot(token=bot_token)
         
-        # Получаем Telegram пользователя
+        # Получаем Telegram пользователя из order.user
         try:
-            telegram_user = TelegramUser.objects.get(user=order.user)
+            telegram_user = TelegramUser.objects.get(user=order.user)  # ✅ order.user
             if not telegram_user.telegram_id:
                 return
         except TelegramUser.DoesNotExist:
             return
         
-        # Формируем сообщение об изменении статуса
+        # Формируем сообщение
         message = f"📦 <b>Обновление статуса заказа #{order.id}</b>\n\n"
         message += f"Новый статус: <b>{order.get_status_display()}</b>\n\n"
-        
-        # Добавляем дополнительную информацию в зависимости от статуса
-        status_display = order.get_status_display()
-        if 'доставлен' in status_display.lower() or order.status == 'delivered':
-            message += "✅ Ваш заказ доставлен. Спасибо за покупку!"
-        elif 'отмен' in status_display.lower() or order.status == 'cancelled':
-            message += "❌ Ваш заказ отменен."
-        elif 'отправлен' in status_display.lower() or order.status == 'shipped':
-            message += "🚚 Ваш заказ отправлен. Ожидайте доставку."
-        
         
         # Отправляем сообщение
         async_to_sync(send_telegram_message_async)(
@@ -109,7 +99,6 @@ def notify_user_about_order_status(order):
         
     except Exception as e:
         logger.error(f"Ошибка при уведомлении пользователя о заказе #{order.id}: {e}")
-
 
 # ОКСАНА Убрала пока не определюсь.
 """
