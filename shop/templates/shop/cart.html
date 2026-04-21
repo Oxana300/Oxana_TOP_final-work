@@ -28,20 +28,13 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                {% if item.product.images.first %}
-                                                    <img src="{{ item.product.images.first.image.url }}" 
-                                                         alt="{{ item.product.name }}"
-                                                         style="width: 60px; height: 60px; object-fit: cover;"
-                                                         class="rounded me-3">
-                                                {% else %}
-                                                    <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center"
-                                                         style="width: 60px; height: 60px;">
-                                                        🌱
-                                                    </div>
-                                                {% endif %}
+                                                <img src="{% static 'shop/images/products/'|add:item.product.slug|add:'/'|add:item.product.slug|add:'-1.png' %}" 
+                                                    alt="{{ item.product.name }}"
+                                                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-right: 15px;"
+                                                    onerror="this.src='https://placehold.co/60x60/2e7d32/white?text=🌱'">
                                                 <div>
                                                     <a href="{% url 'shop:product_detail' item.product.slug %}" 
-                                                       class="text-decoration-none fw-bold">
+                                                        class="text-decoration-none fw-bold">
                                                         {{ item.product.name }}
                                                     </a>
                                                 </div>
