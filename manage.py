@@ -82,3 +82,11 @@ if __name__ == '__main__':
 # Поверяет галичие определенных строк/слов в определенном файле
 # type shop\urls.py | findstr "add_to_cart"
 # type shop\views.py | findstr "def add_to_cart"       определенных функций
+
+# Запуск бота локально
+# python telegram_bot/bot.py
+
+# Обновление на Railway
+# git add .
+# git commit -m "message"
+# git push origin main 

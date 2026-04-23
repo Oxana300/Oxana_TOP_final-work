@@ -107,14 +107,17 @@
                                     <i class="bi bi-cart-plus"></i> Добавить в корзину
                                 </button>
                             </form>
-    
+
                             <button class="btn btn-warning btn-lg" data-bs-toggle="modal" data-bs-target="#preorderModal">
                                 <i class="bi bi-calendar-check"></i> Предзаказ
                             </button>
-    
-                            <button class="btn btn-outline-secondary">
-                                <i class="bi bi-heart"></i> В избранное
-                            </button>
+
+                            <form method="post" action="{% url 'shop:toggle_wishlist' product.slug %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger w-100">
+                                    <i class="bi bi-heart"></i> В избранное
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -263,4 +266,62 @@
         </div>
     </div>
 </div>
+
+<!-- МОДАЛЬНОЕ ОКНО ПРЕДЗАКАЗА -->
+<div class="modal fade" id="preorderModal" tabindex="-1" aria-labelledby="preorderModalLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="preorderModalLabel">
+                    📅 Предзаказ: {{ product.name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'shop:preorder' product.slug %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Ваше имя *</label>
+                        <input type="text" name="customer_name" class="form-control"
+                               value="{{ request.user.get_full_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email *</label>
+                        <input type="email" name="email" class="form-control"
+                               value="{{ request.user.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон *</label>
+                        <input type="text" name="phone" class="form-control"
+                               placeholder="+7 (999) 123-45-67" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Количество *</label>
+                        <input type="number" name="quantity" class="form-control"
+                               value="1" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Срок доставки (дней) *</label>
+                        <input type="number" name="days_to_delivery" class="form-control"
+                               value="7" min="1" max="30" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea name="comment" class="form-control" rows="3"
+                                  placeholder="Дополнительные пожелания"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Закрыть
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        📅 Оформить предзаказ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

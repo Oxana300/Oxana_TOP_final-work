@@ -15,10 +15,10 @@
                         <strong>Ошибка!</strong> Пожалуйста, исправьте ошибки в форме.
                     </div>
                 {% endif %}
-                
+
                 <form method="post" novalidate>
                     {% csrf_token %}
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.username.id_for_label }}" class="form-label">
@@ -26,30 +26,24 @@
                             </label>
                             {{ form.username }}
                             {% if form.username.errors %}
-                                <div class="text-danger small">
-                                    {{ form.username.errors }}
-                                </div>
+                                <div class="text-danger small">{{ form.username.errors }}</div>
                             {% endif %}
                             {% if form.username.help_text %}
-                                <small class="form-text text-muted">
-                                    {{ form.username.help_text }}
-                                </small>
+                                <small class="form-text text-muted">{{ form.username.help_text }}</small>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.email.id_for_label }}" class="form-label">
                                 {{ form.email.label }} *
                             </label>
                             {{ form.email }}
                             {% if form.email.errors %}
-                                <div class="text-danger small">
-                                    {{ form.email.errors }}
-                                </div>
+                                <div class="text-danger small">{{ form.email.errors }}</div>
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.first_name.id_for_label }}" class="form-label">
@@ -57,25 +51,21 @@
                             </label>
                             {{ form.first_name }}
                             {% if form.first_name.errors %}
-                                <div class="text-danger small">
-                                    {{ form.first_name.errors }}
-                                </div>
+                                <div class="text-danger small">{{ form.first_name.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.last_name.id_for_label }}" class="form-label">
                                 {{ form.last_name.label }} *
                             </label>
                             {{ form.last_name }}
                             {% if form.last_name.errors %}
-                                <div class="text-danger small">
-                                    {{ form.last_name.errors }}
-                                </div>
+                                <div class="text-danger small">{{ form.last_name.errors }}</div>
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.phone.id_for_label }}" class="form-label">
@@ -83,25 +73,22 @@
                             </label>
                             {{ form.phone }}
                             {% if form.phone.errors %}
-                                <div class="text-danger small">
-                                    {{ form.phone.errors }}
-                                </div>
+                                <div class="text-danger small">{{ form.phone.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.age.id_for_label }}" class="form-label">
-                                {{ form.age.label }} *
+                            <label for="{{ form.birth_date.id_for_label }}" class="form-label">
+                                {{ form.birth_date.label }} *
                             </label>
-                            {{ form.age }}
-                            {% if form.age.errors %}
-                                <div class="text-danger small">
-                                    {{ form.age.errors }}
-                                </div>
+                            {{ form.birth_date }}
+                            {% if form.birth_date.errors %}
+                                <div class="text-danger small">{{ form.birth_date.errors }}</div>
                             {% endif %}
+                            <small class="form-text text-muted">Для регистрации необходимо быть старше 18 лет</small>
                         </div>
                     </div>
-                    
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.password1.id_for_label }}" class="form-label">
@@ -109,54 +96,41 @@
                             </label>
                             {{ form.password1 }}
                             {% if form.password1.errors %}
-                                <div class="text-danger small">
-                                    {{ form.password1.errors }}
-                                </div>
-                            {% endif %}
-                            {% if form.password1.help_text %}
-                                <small class="form-text text-muted">
-                                    {{ form.password1.help_text }}
-                                </small>
+                                <div class="text-danger small">{{ form.password1.errors }}</div>
                             {% endif %}
                         </div>
-                        
+
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.password2.id_for_label }}" class="form-label">
                                 Подтверждение пароля *
                             </label>
                             {{ form.password2 }}
                             {% if form.password2.errors %}
-                                <div class="text-danger small">
-                                    {{ form.password2.errors }}
-                                </div>
+                                <div class="text-danger small">{{ form.password2.errors }}</div>
                             {% endif %}
                         </div>
                     </div>
-                    
+
                     <div class="mb-3 form-check">
                         {{ form.agree_to_terms }}
                         <label class="form-check-label" for="{{ form.agree_to_terms.id_for_label }}">
                             {{ form.agree_to_terms.label }} *
                         </label>
                         {% if form.agree_to_terms.errors %}
-                            <div class="text-danger small">
-                                {{ form.agree_to_terms.errors }}
-                            </div>
+                            <div class="text-danger small">{{ form.agree_to_terms.errors }}</div>
                         {% endif %}
                     </div>
-                    
+
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            Зарегистрироваться
-                        </button>
+                        <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
                     </div>
                 </form>
-                
+
                 <hr>
-                
+
                 <p class="text-center mb-0">
-                    Уже есть аккаунт? 
-                    <a href="{% url 'login' %}">Войдите</a>
+                    Уже есть аккаунт?
+                    <a href="{% url 'shop:login' %}">Войдите</a>
                 </p>
             </div>
         </div>

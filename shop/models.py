@@ -546,6 +546,11 @@ class UserProfile(models.Model):
         blank=True,
         null=True
     )
+
+    bonus_points = models.PositiveIntegerField(
+    default=0,
+    verbose_name="Бонусные баллы"
+    )    
     
     # Адрес доставки по умолчанию
     default_address = models.TextField(
@@ -774,6 +779,15 @@ class Order(models.Model):
         verbose_name="Скидка"
     )
     
+    bonus_points_earned = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Начислено баллов"
+    )
+    bonus_points_used = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Потрачено баллов"
+    )
+
     final_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -1065,3 +1079,33 @@ class Preorder(models.Model):
     
     def __str__(self):
         return f"Предзаказ #{self.id} - {self.product.name} ({self.customer_name})"
+    
+class WishlistItem(models.Model):
+    """Товар в избранном"""
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE,
+        related_name='wishlist_items',
+        verbose_name="Пользователь"
+    )
+    product = models.ForeignKey(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='wishlisted_by',
+        verbose_name="Товар"
+    )
+    added_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Добавлен"
+    )
+
+    class Meta:
+        verbose_name = "Избранное"
+        verbose_name_plural = "Избранное"
+        unique_together = ['user', 'product']
+        ordering = ['-added_at']
+        db_table = 'wishlist_items'
+
+    def __str__(self):
+        return f"{self.user.username} → {self.product.name}"
+    

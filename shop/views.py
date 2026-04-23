@@ -7,7 +7,7 @@ from django.db import models
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
 from django.views.generic.base import TemplateView
-from django.urls import reverse_lazy
+from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count, Avg
@@ -24,7 +24,8 @@ from decimal import Decimal
 from .models import (
     Product, Category, Tag, ProductReview, 
     SupportTicket, SupportTicketAttachment, 
-    UserProfile, Preorder, Order, OrderItem, Cart, CartItem   #  Добавлены Order и OrderItem, Cart, Car
+    UserProfile, Preorder, Order, OrderItem, Cart, CartItem,   #  Добавлены Order и OrderItem, Cart, Car
+    WishlistItem  # ← ДОБАВИТЬ для "избранного" 
 )
 from .forms import (ProductReviewForm, 
                     SupportTicketForm, 
@@ -952,3 +953,147 @@ def order_confirmation(request, order_id):
     order = get_object_or_404(Order, id=order_id)
     return render(request, 'shop/order_confirmation.html', {'order': order})
 
+# ==========================================
+# КАСТОМНЫЙ ВХОД (LOGIN)
+# ==========================================
+from django.contrib.auth.views import LoginView
+from django.urls import reverse_lazy
+from django.utils.http import url_has_allowed_host_and_scheme
+from .forms import UserLoginForm
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class CustomLoginView(LoginView):
+    """
+    Кастомизированная страница входа
+    """
+    authentication_form = UserLoginForm
+    template_name = 'shop/login.html'
+    next_page = reverse_lazy('shop:home')
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        """Определяет URL для перенаправления после входа"""
+        url = self.request.GET.get('next')
+        if url and url_has_allowed_host_and_scheme(url, allowed_hosts={self.request.get_host()}):
+            return url
+        return self.next_page
+
+    def form_valid(self, form):
+        """Обработка успешного входа"""
+        response = super().form_valid(form)
+        user = form.get_user()
+        messages.success(
+            self.request,
+            f'С возвращением, {user.first_name or user.username}!'
+        )
+        logger.info(f'User {user.username} logged in from IP {self.request.META.get("REMOTE_ADDR")}')
+        return response
+
+
+# ==========================================
+# ИЗБРАННОЕ (WISHLIST)
+# ==========================================
+
+@login_required
+def toggle_wishlist(request, product_slug):
+    """Добавление/удаление из избранного"""
+    product = get_object_or_404(Product, slug=product_slug)
+    
+    item, created = WishlistItem.objects.get_or_create(
+        user=request.user,
+        product=product
+    )
+    
+    if not created:
+        # Уже в избранном — удаляем
+        item.delete()
+        messages.info(request, f'"{product.name}" удалён из избранного 💔')
+    else:
+        messages.success(request, f'"{product.name}" добавлен в избранное! ❤️')
+    
+    # Возвращаемся туда, откуда пришли
+    next_url = request.META.get('HTTP_REFERER', reverse('shop:product_list'))
+    return redirect(next_url)
+
+
+# ==========================================
+# ИСПРАВЛЕННЫЙ create_order С БОНУСАМИ
+# ==========================================
+
+@login_required
+def create_order(request):
+    """Создание заказа из корзины"""
+    if request.method != 'POST':
+        return redirect('shop:cart')
+    
+    cart = get_cart(request)
+    
+    if not cart.items.exists():
+        messages.error(request, 'Корзина пуста!')
+        return redirect('shop:cart')
+    
+    # Создаем заказ
+    order = Order.objects.create(
+        user=request.user if request.user.is_authenticated else None,
+        email=request.POST.get('email', request.user.email if request.user.is_authenticated else ''),
+        phone=request.POST.get('phone', ''),
+        address=request.POST.get('address', ''),
+        city=request.POST.get('city', ''),
+        postal_code=request.POST.get('postal_code', ''),
+        payment_method=request.POST.get('payment_method', 'card'),
+        delivery_method=request.POST.get('delivery_method', 'courier'),
+        comment=request.POST.get('comment', ''),
+        discount=Decimal('0.00')
+    )
+    
+    # Переносим товары
+    total = Decimal('0.00')
+    for cart_item in cart.items.all():
+        item_price = cart_item.product.get_final_price()
+        subtotal = item_price * cart_item.quantity
+        
+        OrderItem.objects.create(
+            order=order,
+            product=cart_item.product,
+            quantity=cart_item.quantity,
+            price=item_price,
+            subtotal=subtotal
+        )
+        total += subtotal
+    
+    # БОНУСНАЯ СИСТЕМА: обработка баллов
+    use_points = int(request.POST.get('use_bonus_points', 0))
+    if use_points > 0 and request.user.is_authenticated:
+        profile = request.user.profile
+        if use_points <= profile.bonus_points:
+            discount = Decimal(use_points)
+            profile.bonus_points -= use_points
+            profile.save()
+            order.discount = discount
+            order.bonus_points_used = use_points
+    
+    order.total_price = total
+    order.final_price = total - order.discount
+    order.save()
+    
+    # Начисляем бонусы
+    if request.user.is_authenticated:
+        profile = request.user.profile
+        earned = int(order.final_price)  # 1 рубль = 1 балл
+        profile.bonus_points += earned
+        profile.save()
+        order.bonus_points_earned = earned
+        order.save()
+    
+    # Очищаем корзину
+    cart.items.all().delete()
+    
+    messages.success(
+        request, 
+        f'Заказ #{order.id} успешно оформлен! '
+        f'Начислено бонусов: {order.bonus_points_earned} ✨'
+    )
+    return redirect('shop:order_confirmation', order_id=order.id)
