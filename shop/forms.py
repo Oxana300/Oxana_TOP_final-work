@@ -580,25 +580,32 @@ class UserRegistrationForm(UserCreationForm):
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
         if phone:
-            cleaned_phone = re.sub(r'[^\d+]', '', phone)
-            if cleaned_phone.startswith('8') and len(cleaned_phone) == 11:
-                cleaned_phone = '+7' + cleaned_phone[1:]
-            elif cleaned_phone.startswith('7') and len(cleaned_phone) == 11:
-                cleaned_phone = '+' + cleaned_phone
+            digits = re.sub(r'\D', '', phone)
 
-            if not re.match(r'^\+?\d{10,15}$', cleaned_phone):
+            # Приводим один и тот же номер к одному виду:
+            # +7 999..., 7 999..., 8 999... и 999... будут считаться одинаковыми.
+            if len(digits) == 11 and digits.startswith('8'):
+                digits = '7' + digits[1:]
+            elif len(digits) == 10:
+                digits = '7' + digits
+
+            if not re.match(r'^\d{10,15}$', digits):
                 raise ValidationError(
                     "Введите корректный номер телефона (10-15 цифр, может начинаться с +)"
                 )
 
-            phone_digits = re.sub(r'\D', '', cleaned_phone)
+            phone_key = digits[-10:]
             existing_profiles = UserProfile.objects.exclude(phone__isnull=True).exclude(phone='')
             for profile in existing_profiles.only('phone'):
                 existing_digits = re.sub(r'\D', '', profile.phone or '')
-                if existing_digits == phone_digits:
+                if len(existing_digits) == 11 and existing_digits.startswith('8'):
+                    existing_digits = '7' + existing_digits[1:]
+                existing_key = existing_digits[-10:] if len(existing_digits) >= 10 else existing_digits
+
+                if existing_key == phone_key:
                     raise ValidationError("На этот номер телефона уже зарегистрирован аккаунт")
 
-            return cleaned_phone
+            return '+' + digits if digits.startswith('7') and len(digits) == 11 else digits
         return phone
 
     def clean_birth_date(self):
