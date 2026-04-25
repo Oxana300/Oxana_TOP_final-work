@@ -1,0 +1,78 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Привязать Telegram{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-telegram"></i> Привязать Telegram
+                </h4>
+            </div>
+            <div class="card-body text-center py-5">
+                <i class="bi bi-telegram display-1 text-primary mb-4"></i>
+                
+                <h3 class="mb-3">Привяжите свой Telegram аккаунт</h3>
+                
+                <p class="lead text-muted mb-4">
+                    Получайте уведомления о заказах прямо в Telegram!
+                </p>
+                
+                <!-- Код привязки -->
+                <div class="alert alert-info mb-4">
+                    <h5 class="alert-heading">Ваш код привязки:</h5>
+                    <div class="display-4 fw-bold font-monospace" style="letter-spacing: 5px;">
+                        {{ code }}
+                    </div>
+                    <hr>
+                    <p class="mb-0 small">
+                        <i class="bi bi-clock"></i> 
+                        Действует до: {{ expires_at|date:"H:i d.m.Y" }}
+                    </p>
+                </div>
+                
+                <!-- Инструкция -->
+                <div class="text-start mb-4">
+                    <h5>📋 Инструкция:</h5>
+                    <ol class="mb-0">
+                        <li>Откройте Telegram</li>
+                        <li>Найдите бота: <strong>@{{ bot_username }}</strong></li>
+                        <li>Нажмите <strong>/start</strong></li>
+                        <li>Отправьте этот код боту</li>
+                        <li>Готово! Аккаунты привязаны ✅</li>
+                    </ol>
+                </div>
+                
+                <!-- Кнопка открыть Telegram -->
+                <a href="https://t.me/{{ bot_username }}" 
+                   target="_blank"
+                   class="btn btn-primary btn-lg mb-3">
+                    <i class="bi bi-telegram"></i> Открыть Telegram
+                </a>
+                
+                <div>
+                    <a href="{% url 'shop:profile' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Назад в профиль
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Автообновление таймера -->
+<script>
+// Обновляем страницу когда код истечёт
+const expiresAt = new Date('{{ expires_at|date:"c" }}');
+const now = new Date();
+const timeLeft = expiresAt - now;
+
+if (timeLeft > 0) {
+    setTimeout(() => {
+        location.reload();
+    }, timeLeft);
+}
+</script>
+{% endblock %}
