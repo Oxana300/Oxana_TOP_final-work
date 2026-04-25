@@ -564,25 +564,40 @@ class UserRegistrationForm(UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if User.objects.filter(email__iexact=email).exists():
-            raise ValidationError("Пользователь с таким email уже зарегистрирован")
+        if email:
+            email = email.strip().lower()
+            if User.objects.filter(email__iexact=email).exists():
+                raise ValidationError("На этот email уже зарегистрирован аккаунт")
 
-        allowed_domains = ['mail.ru', 'gmail.com', 'yandex.ru', 'bk.ru', 'list.ru']
-        domain = email.split('@')[-1].lower()
-        if domain not in allowed_domains:
-            raise ValidationError(
-                f"Домен {domain} не разрешен. Разрешены: {', '.join(allowed_domains)}"
-            )
+            allowed_domains = ['mail.ru', 'gmail.com', 'yandex.ru', 'bk.ru', 'list.ru']
+            domain = email.split('@')[-1].lower()
+            if domain not in allowed_domains:
+                raise ValidationError(
+                    f"Домен {domain} не разрешен. Разрешены: {', '.join(allowed_domains)}"
+                )
         return email
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
         if phone:
             cleaned_phone = re.sub(r'[^\d+]', '', phone)
+            if cleaned_phone.startswith('8') and len(cleaned_phone) == 11:
+                cleaned_phone = '+7' + cleaned_phone[1:]
+            elif cleaned_phone.startswith('7') and len(cleaned_phone) == 11:
+                cleaned_phone = '+' + cleaned_phone
+
             if not re.match(r'^\+?\d{10,15}$', cleaned_phone):
                 raise ValidationError(
                     "Введите корректный номер телефона (10-15 цифр, может начинаться с +)"
                 )
+
+            phone_digits = re.sub(r'\D', '', cleaned_phone)
+            existing_profiles = UserProfile.objects.exclude(phone__isnull=True).exclude(phone='')
+            for profile in existing_profiles.only('phone'):
+                existing_digits = re.sub(r'\D', '', profile.phone or '')
+                if existing_digits == phone_digits:
+                    raise ValidationError("На этот номер телефона уже зарегистрирован аккаунт")
+
             return cleaned_phone
         return phone
 
@@ -605,6 +620,21 @@ class UserRegistrationForm(UserCreationForm):
             if age > 120:
                 raise ValidationError("Указан некорректный возраст")
         return birth_date
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data.get('email')
+        user.first_name = self.cleaned_data.get('first_name')
+        user.last_name = self.cleaned_data.get('last_name')
+
+        if commit:
+            user.save()
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            profile.phone = self.cleaned_data.get('phone')
+            profile.birth_date = self.cleaned_data.get('birth_date')
+            profile.save()
+
+        return user
 
     def clean_password1(self):
         password = self.cleaned_data.get('password1')
