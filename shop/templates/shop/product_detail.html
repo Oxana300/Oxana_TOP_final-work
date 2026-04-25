@@ -103,8 +103,8 @@
                         <div class="d-grid gap-2">
                             <form method="post" action="{% url 'shop:add_to_cart' product.slug %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-primary btn-lg w-100">
-                                    <i class="bi bi-cart-plus"></i> Добавить в корзину
+                                <button type="submit" class="btn btn-primary btn-lg w-100" {% if product.stock_quantity <= 0 %}disabled{% endif %}>
+                                    <i class="bi bi-cart-plus"></i> {% if product.stock_quantity <= 0 %}Нет в наличии{% else %}Добавить в корзину{% endif %}
                                 </button>
                             </form>
 
@@ -115,7 +115,7 @@
                             <form method="post" action="{% url 'shop:toggle_wishlist' product.slug %}">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-outline-danger w-100">
-                                    <i class="bi bi-heart"></i> В избранное
+                                    {% if is_wishlisted %}<i class="bi bi-heart-fill"></i> Убрать из избранного{% else %}<i class="bi bi-heart"></i> В избранное{% endif %}
                                 </button>
                             </form>
                         </div>
@@ -146,12 +146,12 @@
         <!-- Отзывы -->
         <div class="card mb-4">
             <div class="card-header">
-                <h4 class="mb-0">Отзывы ({{ product.reviews.count }})</h4>
+                <h4 class="mb-0">Отзывы ({{ reviews_count }})</h4>
             </div>
             <div class="card-body">
-                {% if product.reviews.all %}
+                {% if reviews_count %}
                 <div class="mb-4">
-                    {% for review in product.reviews.all|slice:":5" %}
+                    {% for review in reviews|slice:":5" %}
                     <div class="border-bottom pb-3 mb-3">
                         <div class="d-flex justify-content-between">
                             <strong>{{ review.user.username }}</strong>
@@ -301,9 +301,9 @@
                                value="1" min="1" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Срок доставки (дней) *</label>
+                        <label class="form-label">Срок доставки по этому товару (дней) *</label>
                         <input type="number" name="days_to_delivery" class="form-control"
-                               value="7" min="1" max="30" required>
+                               value="{{ product.preorder_delivery_days }}" min="1" max="30" readonly required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Комментарий</label>

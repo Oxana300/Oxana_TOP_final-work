@@ -4,10 +4,11 @@ from django.apps import AppConfig
 class TelegramBotConfig(AppConfig):
     name = 'telegram_bot'
     default_auto_field = 'django.db.models.BigAutoField'
-    verbose_name = 'Tekegram бот'
-
+    verbose_name = 'Telegram бот'
+    
     def ready(self):
-        """
+        '''
         Регистрация сигналов при запуске джанго
-        """
+        '''
         import telegram_bot.signals
+        

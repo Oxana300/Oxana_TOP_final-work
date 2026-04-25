@@ -3,195 +3,96 @@ import asyncio
 from django.conf import settings
 from telegram_bot.models import TelegramNotification, TelegramUser
 
-
 logger = logging.getLogger(__name__)
 
-async def send_telegram_message_async(bot, telegram_id, message, timeout=30):
-    """Асинхронная отправка сообщения с таймаутом"""
-    try:
-        await asyncio.wait_for(
-            bot.send_message(
-                chat_id=telegram_id,
-                text=message,
-                parse_mode='HTML'
-            ),
-            timeout=timeout
-        )
-        return True, None
-    except asyncio.TimeoutError:
-        return False, "Timeout"
-    except Exception as e:
-        return False, str(e)
-
 def send_telegram_message(telegram_id, message):
-    """Отправка сообщения в Telegram (синхронная обертка)"""
+    """
+    Отправка сообщения только заданному Telegram id
+    """
     from aiogram import Bot
     from decouple import config
     
     bot_token = config('TELEGRAM_BOT_TOKEN')
-    bot = Bot(token=bot_token)
-
-def notify_admins_about_order(order):
-    """Уведомление администраторов о новом заказе"""
+    bot = Bot(token= bot_token)
+    
+    
     try:
-        from asgiref.sync import async_to_sync
-        from aiogram import Bot
-        from decouple import config
-        from django.contrib.auth.models import User
-        
-        bot_token = config('TELEGRAM_BOT_TOKEN')
-        bot = Bot(token=bot_token)
-        
-        # Получаем всех администраторов (is_staff=True или is_superuser)
-        admins = User.objects.filter(is_staff=True)
-        
-        # Формируем сообщение о заказе
-        message = f"🆕 <b>Новый заказ #{order.id}</b>\n\n"
-        message += f"Клиент: {order.user.get_full_name() or order.user.username}\n"
-        message += f"Сумма: {order.total_price} руб.\n"
-        message += f"Статус: {order.get_status_display()}\n"
-        # Добавьте другие поля заказа по необходимости
-        
-        # Отправляем сообщение каждому админу, у которого есть Telegram
-        for admin in admins:
-            try:
-                telegram_user = TelegramUser.objects.get(user=admin)
-                if telegram_user.telegram_id:
-                    async_to_sync(send_telegram_message_async)(
-                        bot, 
-                        telegram_user.telegram_id, 
-                        message
-                    )
-            except TelegramUser.DoesNotExist:
-                continue
-                
-    except Exception as e:
-        logger.error(f"Ошибка при уведомлении админов о заказе #{order.id}: {e}")
-
-def notify_user_about_order_status(order):  # ✅ 1 аргумент
-    """Уведомление пользователя об изменении статуса заказа"""
-    try:
-        from asgiref.sync import async_to_sync
-        from aiogram import Bot
-        from decouple import config
-        
-        bot_token = config('TELEGRAM_BOT_TOKEN')
-        bot = Bot(token=bot_token)
-        
-        # Получаем Telegram пользователя из order.user
-        try:
-            telegram_user = TelegramUser.objects.get(user=order.user)  # ✅ order.user
-            if not telegram_user.telegram_id:
-                return
-        except TelegramUser.DoesNotExist:
-            return
-        
-        # Формируем сообщение
-        message = f"📦 <b>Обновление статуса заказа #{order.id}</b>\n\n"
-        message += f"Новый статус: <b>{order.get_status_display()}</b>\n\n"
-        
-        # Отправляем сообщение
-        async_to_sync(send_telegram_message_async)(
-            bot,
-            telegram_user.telegram_id,
-            message
+        asyncio.run(bot.send_message(
+            chat_id = telegram_id,
+            text = message,
+            parse_mode = 'HTML'
+        ))     
+        TelegramNotification.objects.create(
+            telegram_user = TelegramUser.objects.get(telegram_id = telegram_id),
+            message = message,
+            status = 'sent'
         )
         
-    except Exception as e:
-        logger.error(f"Ошибка при уведомлении пользователя о заказе #{order.id}: {e}")
-
-# ОКСАНА Убрала пока не определюсь.
-"""
-    try:
-        # Проверяем, запущен ли цикл событий
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # Нет запущенного цикла - используем asyncio.run()
-            success, error = asyncio.run(send_telegram_message_async(bot, telegram_id, message))
-        else:
-            # Цикл уже запущен - создаем задачу
-            if loop.is_running():
-                task = asyncio.create_task(send_telegram_message_async(bot, telegram_id, message))
-                # Даем время на выполнение (опционально)
-                success, error = loop.run_until_complete(task)
-            else:
-                success, error = asyncio.run(send_telegram_message_async(bot, telegram_id, message))
-        
-        if success:
-            # Сохраняем успешное уведомление
-            try:
-                tg_user = TelegramUser.objects.get(telegram_id=telegram_id)
-                TelegramNotification.objects.create(
-                    telegram_user=tg_user,
-                    message=message,
-                    status='sent'
-                )
-            except TelegramUser.DoesNotExist:
-                pass
-            
-            logger.info(f'Message sent to {telegram_id}')
-            return True
-        else:
-            raise Exception(error)
-            
-    except Exception as e:
-        logger.error(f'Failed to send message to {telegram_id}: {e}')
-        
-        # Логируем ошибку
-        try:
-            tg_user = TelegramUser.objects.get(telegram_id=telegram_id)
-            TelegramNotification.objects.create(
-                telegram_user=tg_user,
-                message=message,
-                status='failed',
-                error_message=str(e)
-            )
-        except TelegramUser.DoesNotExist:
-            pass
-        
-        return False
-    finally:
-        # Закрываем сессию бота
-        asyncio.create_task(bot.session.close())
-"""
-import asyncio
-import logging
-from aiogram import Bot
-from decouple import config
-
-logger = logging.getLogger(__name__)
-
-# Глобальная переменная для бота
-_bot = None
-
-def get_bot():
-    global _bot
-    if _bot is None:
-        token = config('TELEGRAM_BOT_TOKEN', default='')
-        if token:
-            _bot = Bot(token=token)
-    return _bot
-
-async def send_message_async(chat_id, text):
-    bot = get_bot()
-    if bot:
-        try:
-            await bot.send_message(chat_id=chat_id, text=text, parse_mode='HTML')
-            return True
-        except Exception as e:
-            logger.error(f"Telegram error: {e}")
-    return False
-
-def send_telegram_message(chat_id, text):
-    """Синхронная обертка для отправки сообщений"""
-    try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            asyncio.create_task(send_message_async(chat_id, text))
-        else:
-            asyncio.run(send_message_async(chat_id, text))
+        logger.info(f'Message sent to {telegram_id}')
         return True
     except Exception as e:
-        logger.error(f"Failed to send message: {e}")
+        logger.error(f'Failed to send message to {telegram_id}: {e}')
+        # логируем ошибку
+        try: 
+            tg_user = TelegramUser.objects.get(telegram_id = telegram_id)
+            TelegramNotification.objects.create(
+                telegram_user = tg_user,
+                message = message,
+                status = 'failed',
+                error_message = str(e)
+            )
+        except:
+            pass
         return False
+    finally:
+        asyncio.run(bot.session.close())
+
+
+def notify_admins_about_order(order):
+    """
+    Уведомляет админов о новом заказе
+    """
+    
+    from decouple import config
+    
+    admin_ids = config('TELEGRAM_ADMIN_IDS', default='', cast= lambda x: [int(i) for i in x.split(',')])
+    
+    if not admin_ids:
+        logger.warning("TELEGRAM_ADMIN_IDS not configured")
+        return
+    
+    message = (
+        f'<b>Новый заказ #{order.id}</b>\n\n'
+        f'<b>Клиент: {order.user.get_full_name() or order.user.username} </b>\n'
+        f'<b>Email: {order.user.email}</b>\n'
+        f'<b>Сумма: </b> {order.total_price} руб\n'
+        f'<b>Адрес:</b>{order.address}\n\n'
+        f'Проверьте админку для деталей'
+    )
+    
+    for admin_id in admin_ids:
+        send_telegram_message(admin_id, message)
+        
+def notify_user_about_order_status(user, order):
+    """
+    Уведомление пользователя об изменении статуса заказа
+    """
+    try:
+        tg_user = user.telegram_profile
+    except:
+        return
+    
+    status_emoji = {
+        'new': '🆕',
+        'processing': '🔄',
+        'shipped': '📦',
+        'delivered': '✅',
+        'cancelled': '❌',
+    }
+    
+    message = (
+        f'{status_emoji.get(order.status)} <b>Статус заказа # {order.id} изменен </b>\n\n'
+        f'Текущий статус: <b>{order.get_status_display()}</b>\n\n'
+        f'Проверьте детали в личном кабинете'
+    )
+    send_telegram_message(tg_user.telegram_id, message )

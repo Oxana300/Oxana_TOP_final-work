@@ -47,7 +47,7 @@
                                             <form method="post" action="{% url 'shop:update_cart' item.id %}" class="d-flex">
                                                 {% csrf_token %}
                                                 <input type="number" name="quantity" value="{{ item.quantity }}" 
-                                                       min="1" max="99" class="form-control form-control-sm me-2"
+                                                       min="1" max="{{ item.product.stock_quantity }}" class="form-control form-control-sm me-2"
                                                        style="width: 70px;" onchange="this.form.submit()">
                                             </form>
                                         </td>

@@ -20,6 +20,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.utils.html import strip_tags  #  Добавлен импорт
 from decimal import Decimal
+from pathlib import Path
 
 from .models import (
     Product, Category, Tag, ProductReview, 
@@ -66,10 +67,20 @@ class HomePageView(TemplateView):
         context['new_products'] = Product.published.order_by('-created_at')[:8]
         # Категории
         context['categories'] = Category.objects.all()[:6]
-        # Товары для карусели
-        context['carousel_products'] = Product.published.filter(
-            images__isnull=False
-        ).distinct().order_by('?')[:12]
+        # Все фото из папок products для главной карусели
+        products_dir = Path(settings.BASE_DIR) / 'shop' / 'static' / 'shop' / 'images' / 'products'
+        rows = []
+        if products_dir.exists():
+            for product_dir in sorted([d for d in products_dir.iterdir() if d.is_dir()]):
+                product = Product.objects.filter(slug=product_dir.name, status='published').first()
+                files = [f for f in sorted(product_dir.iterdir()) if f.suffix.lower() in { '.png', '.jpg', '.jpeg', '.webp' }]
+                for idx, img in enumerate(files):
+                    rows.append((idx, {
+                        'url': f'shop/images/products/{product_dir.name}/{img.name}',
+                        'title': product.name if product else product_dir.name.replace('-', ' ').title(),
+                        'slug': product_dir.name,
+                    }))
+        context['carousel_images'] = [item for idx, item in sorted(rows, key=lambda x: x[0])]
         return context
     
 class ProductListView(ListView):
@@ -155,7 +166,14 @@ class ProductDetailView(DetailView):
                 if file.endswith('.png'):
                     product_images.append(f'shop/images/products/{product.slug}/{file}')
         
+        reviews = product.reviews.select_related('user').all()
+        average_rating = reviews.aggregate(avg=Avg('rating'))['avg']
         context['product_images'] = product_images
+        context['reviews'] = reviews
+        context['reviews_count'] = reviews.count()
+        context['average_rating'] = round(average_rating, 1) if average_rating else 0
+        context['related_products'] = Product.published.filter(category=product.category).exclude(pk=product.pk)[:4]
+        context['is_wishlisted'] = WishlistItem.objects.filter(user=self.request.user, product=product).exists() if self.request.user.is_authenticated else False
         return context
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
@@ -816,62 +834,48 @@ def product_list_fbv(request):
 
 @login_required
 def preorder_view(request, product_slug):
+    """Оформление предзаказа. Срок доставки берётся из товара и меняется в админке."""
     product = get_object_or_404(Product, slug=product_slug)
-    
+
     if request.method == 'POST':
         form = PreorderForm(request.POST)
         if form.is_valid():
             preorder = form.save(commit=False)
             preorder.product = product
             preorder.user = request.user if request.user.is_authenticated else None
+            preorder.days_to_delivery = product.preorder_delivery_days
             preorder.save()
-            
-            # Отправка уведомления
-            messages.success(request, f'Предзаказ на {product.name} оформлен! Мы свяжемся с вами.')
+            messages.success(request, f'Предзаказ на {product.name} оформлен! Срок доставки: {product.preorder_delivery_days} дн. Мы свяжемся с вами.')
             return redirect('shop:product_detail', slug=product_slug)
+        messages.error(request, 'Проверьте данные предзаказа и попробуйте ещё раз.')
     else:
-        form = PreorderForm(initial={'customer_name': request.user.get_full_name(), 'email': request.user.email})
-    
+        form = PreorderForm(initial={
+            'customer_name': request.user.get_full_name() if request.user.is_authenticated else '',
+            'email': request.user.email if request.user.is_authenticated else '',
+            'days_to_delivery': product.preorder_delivery_days,
+        })
+
     return render(request, 'shop/preorder.html', {'form': form, 'product': product})
 
-
-# Исправление корзины
-from .models import Cart, CartItem
-
-def get_cart(request):
-    """Получение или создание корзины"""
-    if request.user.is_authenticated:
-        cart, created = Cart.objects.get_or_create(user=request.user)
-    else:
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
-        cart, created = Cart.objects.get_or_create(session_key=session_key)
-    return cart
-
 def add_to_cart(request, product_slug):
-    """Добавление товара в корзину"""
+    """Добавление товара в корзину с проверкой остатка на складе"""
     product = get_object_or_404(Product, slug=product_slug)
     cart = get_cart(request)
-    
-    # Проверяем, есть ли уже такой товар в корзине
-    cart_item, created = CartItem.objects.get_or_create(
-        cart=cart,
-        product=product,
-        defaults={'quantity': 1}
-    )
-    
-    if not created:
+
+    if product.stock_quantity <= 0:
+        messages.error(request, f'Товара "{product.name}" нет в наличии.')
+        return redirect(request.META.get('HTTP_REFERER', reverse('shop:product_list')))
+
+    cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product, defaults={'quantity': 0})
+    if cart_item.quantity + 1 > product.stock_quantity:
+        messages.warning(request, f'Нельзя добавить больше {product.stock_quantity} шт. товара "{product.name}" — столько есть в наличии.')
+    else:
         cart_item.quantity += 1
         cart_item.save()
-    
-    messages.success(request, f'Товар "{product.name}" добавлен в корзину!')
-    
-    # Возвращаемся на предыдущую страницу или на страницу корзины
-    next_url = request.POST.get('next', request.GET.get('next', 'shop:cart'))
-    return redirect(next_url)
+        messages.success(request, f'Товар "{product.name}" добавлен в корзину!')
 
+    next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or reverse('shop:cart')
+    return redirect(next_url)
 def cart_page(request):
     cart = get_cart(request)
     items = cart.items.all()
@@ -885,68 +889,19 @@ def cart_page(request):
 
 def update_cart(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id)
-    quantity = int(request.POST.get('quantity', 1))
-    
+    quantity = int(request.POST.get('quantity', 1) or 1)
+
+    if quantity > cart_item.product.stock_quantity:
+        quantity = cart_item.product.stock_quantity
+        messages.warning(request, f'В наличии только {quantity} шт. товара "{cart_item.product.name}".')
+
     if quantity > 0:
         cart_item.quantity = quantity
         cart_item.save()
     else:
         cart_item.delete()
-    
-    return redirect('shop:cart')
 
-@login_required
-def create_order(request):
-    """Создание заказа из корзины"""
-    if request.method == 'POST':
-        cart = get_cart(request)
-        
-        if not cart.items.exists():
-            messages.error(request, 'Корзина пуста!')
-            return redirect('shop:cart')
-        
-        # Создаем заказ
-        order = Order.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            email=request.POST.get('email', request.user.email if request.user.is_authenticated else ''),
-            phone=request.POST.get('phone'),
-            address=request.POST.get('address'),
-            city=request.POST.get('city'),
-            postal_code=request.POST.get('postal_code', ''),
-            payment_method=request.POST.get('payment_method', 'card'),
-            delivery_method=request.POST.get('delivery_method', 'courier'),
-            comment=request.POST.get('comment', ''),
-            discount=Decimal('0.00')  # ✅ Явно указываем Decimal
-        )
-        
-        # Переносим товары
-        total = Decimal('0.00')
-        for cart_item in cart.items.all():
-            item_price = cart_item.product.get_final_price()
-            subtotal = item_price * cart_item.quantity
-            
-            OrderItem.objects.create(
-                order=order,
-                product=cart_item.product,
-                quantity=cart_item.quantity,
-                price=item_price,
-                subtotal=subtotal
-            )
-            total += subtotal
-        
-        # Обновляем суммы
-        order.total_price = total
-        order.final_price = total  # без скидки пока
-        order.save()
-        
-        # Очищаем корзину
-        cart.items.all().delete()
-        
-        messages.success(request, f'Заказ #{order.id} успешно оформлен!')
-        return redirect('shop:order_confirmation', order_id=order.id)
-    
     return redirect('shop:cart')
-
 
 def order_confirmation(request, order_id):
     """Страница подтверждения заказа"""
@@ -1025,17 +980,20 @@ def toggle_wishlist(request, product_slug):
 
 @login_required
 def create_order(request):
-    """Создание заказа из корзины"""
+    """Создание заказа из корзины с проверкой остатков и бонусами"""
     if request.method != 'POST':
         return redirect('shop:cart')
-    
+
     cart = get_cart(request)
-    
     if not cart.items.exists():
         messages.error(request, 'Корзина пуста!')
         return redirect('shop:cart')
-    
-    # Создаем заказ
+
+    for cart_item in cart.items.select_related('product'):
+        if cart_item.quantity > cart_item.product.stock_quantity:
+            messages.error(request, f'Недостаточно товара "{cart_item.product.name}". В наличии: {cart_item.product.stock_quantity} шт.')
+            return redirect('shop:cart')
+
     order = Order.objects.create(
         user=request.user if request.user.is_authenticated else None,
         email=request.POST.get('email', request.user.email if request.user.is_authenticated else ''),
@@ -1048,52 +1006,44 @@ def create_order(request):
         comment=request.POST.get('comment', ''),
         discount=Decimal('0.00')
     )
-    
-    # Переносим товары
+
     total = Decimal('0.00')
-    for cart_item in cart.items.all():
+    for cart_item in cart.items.select_related('product'):
         item_price = cart_item.product.get_final_price()
         subtotal = item_price * cart_item.quantity
-        
-        OrderItem.objects.create(
-            order=order,
-            product=cart_item.product,
-            quantity=cart_item.quantity,
-            price=item_price,
-            subtotal=subtotal
-        )
+        OrderItem.objects.create(order=order, product=cart_item.product, quantity=cart_item.quantity, price=item_price, subtotal=subtotal)
         total += subtotal
-    
-    # БОНУСНАЯ СИСТЕМА: обработка баллов
-    use_points = int(request.POST.get('use_bonus_points', 0))
+        cart_item.product.stock_quantity -= cart_item.quantity
+        cart_item.product.save(update_fields=['stock_quantity'])
+
+    use_points = int(request.POST.get('use_bonus_points', 0) or 0)
     if use_points > 0 and request.user.is_authenticated:
         profile = request.user.profile
         if use_points <= profile.bonus_points:
-            discount = Decimal(use_points)
+            order.discount = Decimal(use_points)
+            order.bonus_points_used = use_points
             profile.bonus_points -= use_points
             profile.save()
-            order.discount = discount
-            order.bonus_points_used = use_points
-    
+
     order.total_price = total
-    order.final_price = total - order.discount
+    order.final_price = max(total - order.discount, Decimal('0.00'))
     order.save()
-    
-    # Начисляем бонусы
+
     if request.user.is_authenticated:
         profile = request.user.profile
-        earned = int(order.final_price)  # 1 рубль = 1 балл
+        earned = int(order.final_price)
         profile.bonus_points += earned
         profile.save()
         order.bonus_points_earned = earned
         order.save()
-    
-    # Очищаем корзину
+
     cart.items.all().delete()
-    
-    messages.success(
-        request, 
-        f'Заказ #{order.id} успешно оформлен! '
-        f'Начислено бонусов: {order.bonus_points_earned} ✨'
-    )
+    messages.success(request, f'Заказ #{order.id} успешно оформлен! Начислено бонусов: {order.bonus_points_earned} ✨')
     return redirect('shop:order_confirmation', order_id=order.id)
+
+
+@login_required
+def wishlist_page(request):
+    """Страница избранного пользователя"""
+    items = WishlistItem.objects.filter(user=request.user).select_related('product', 'product__category')
+    return render(request, 'shop/wishlist.html', {'wishlist_items': items})

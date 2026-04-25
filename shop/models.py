@@ -212,6 +212,12 @@ class Product(models.Model):
         verbose_name="Количество на складе",
         help_text="Количество доступных единиц товара"
     )
+
+    preorder_delivery_days = models.PositiveIntegerField(
+        default=7,
+        verbose_name="Срок доставки предзаказа (дней)",
+        help_text="Сколько дней нужно на выполнение предзаказа по этому товару"
+    )
     
     # Менеджеры моделей
     objects = models.Manager()  # Стандартный менеджер

@@ -7,96 +7,39 @@
 <div class="row mb-4">
     <div class="col text-center">
         <div class="logo-container mb-4">
-            <img src="{% static 'shop/images/logo.png' %}" 
-                 alt="Логотип магазина Полезная микрозелень" 
-                 style="max-height: 100px;"
+            <img src="{% static 'shop/images/logo.png' %}" alt="Логотип магазина Полезная микрозелень" style="max-height: 100px;"
                  onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'%3E%3Ccircle cx=\'50\' cy=\'50\' r=\'45\' fill=\'%232e7d32\'/%3E%3Ctext x=\'50\' y=\'67\' text-anchor=\'middle\' fill=\'white\' font-size=\'50\'%3E🌱%3C/text%3E%3C/svg%3E';">
         </div>
         <h1 class="display-4">Добро пожаловать в наш магазин!</h1>
-        <p class="lead">Лучшие товары по выгодным ценам</p>
+        <p class="lead">Свежая микрозелень по выгодным ценам</p>
     </div>
 </div>
 
-<!-- Карусель товаров -->
-<div class="product-carousel">
-    <div class="container">
-        <h2 class="text-center mb-4">🌟 Наша продукция</h2>
-        <div class="carousel-container" id="productCarousel">
-            <div class="carousel-track">
-                {% load static %}
-                <!-- Прямые пути к папкам (без использования slug) -->
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-amarant/mikrozelen-amarant-1.png' %}" 
-                         alt="Амарант" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Амарант'">
-                </div>
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-brokkoli/mikrozelen-brokkoli-1.png' %}" 
-                         alt="Брокколи" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Брокколи'">
-                </div>
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-gorchitsa/mikrozelen-gorchitsa-1.png' %}" 
-                         alt="Горчица" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Горчица'">
-                </div>
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-kolrabi/mikrozelen-kolrabi-1.png' %}" 
-                         alt="Кольраби" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Кольраби'">
-                </div>
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-podsolnechnik/mikrozelen-podsolnechnik-1.png' %}" 
-                         alt="Подсолнечник" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Подсолнечник'">
-                </div>
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-redis-dajkon/mikrozelen-redis-dajkon-1.png' %}" 
-                         alt="Редис Дайкон" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Редис Дайкон'">
-                </div>
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-shpinat/mikrozelen-shpinat-1.png' %}" 
-                         alt="Шпинат" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Шпинат'">
-                </div>
-                <div class="carousel-slide">
-                    <img src="{% static 'shop/images/products/mikrozelen-shavel/mikrozelen-shavel-1.png' %}" 
-                         alt="Щавель" 
-                         onerror="this.src='https://placehold.co/280x200/2e7d32/white?text=Щавель'">
-                </div>
-            </div>
-        </div>
-        <div class="carousel-buttons">
-            <button class="carousel-btn" onclick="scrollCarousel(-1)">←</button>
-            <button class="carousel-btn" onclick="scrollCarousel(1)">→</button>
-        </div>
+<div class="home-hero-carousel my-5">
+    <div class="text-center mb-4">
+        <h2>🌟 Наша продукция</h2>
+        <p class="text-muted mb-0">Все фотографии из папок товаров автоматически попадают в карусель</p>
+    </div>
+    <div class="circle-gallery" style="--items: {{ carousel_images|length|default:1 }};">
+        {% for image in carousel_images %}
+        <a href="{% url 'shop:product_detail' image.slug %}" class="circle-card" style="--i: {{ forloop.counter0 }};">
+            <img src="{% static image.url %}" alt="{{ image.title }}">
+            <span>{{ image.title }}</span>
+        </a>
+        {% empty %}
+        <div class="text-center text-muted">Фотографии товаров не найдены.</div>
+        {% endfor %}
     </div>
 </div>
 
-<!-- Описание (черный шрифт) -->
 <div class="row my-5">
     <div class="col-12">
         <div class="description-text" style="color: #000; background: rgba(255,255,255,0.8); padding: 30px; border-radius: 15px;">
             <h2 class="text-center mb-4">🌱 Что такое микрозелень?</h2>
-            <p>Микрозелень — это молодые растения в фазе первых настоящих листьев. Она содержит в 5-10 раз больше полезных веществ, чем взрослые растения!</p>
-            <p>Наша микрозелень выращивается без химических удобрений и пестицидов. Мы используем только качественные семена и экологически чистые субстраты.</p>
-            <p>Доставка осуществляется в день сбора урожая, чтобы вы получили максимум пользы и свежести!</p>
+            <p>Микрозелень — это молодые растения в фазе первых настоящих листьев. Она содержит в 5-10 раз больше полезных веществ, чем взрослые растения.</p>
+            <p>Наша микрозелень выращивается без химических удобрений и пестицидов. Мы используем качественные семена и экологически чистые субстраты.</p>
+            <p>Доставка осуществляется в день сбора урожая, чтобы вы получили максимум пользы и свежести.</p>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-function scrollCarousel(direction) {
-    const container = document.getElementById('productCarousel');
-    if (container) {
-        container.scrollBy({
-            left: direction * 300,
-            behavior: 'smooth'
-        });
-    }
-}
-</script>
 {% endblock %}

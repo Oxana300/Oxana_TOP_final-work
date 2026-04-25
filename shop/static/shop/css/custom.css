@@ -202,3 +202,90 @@ body::before {
         height: 150px;
     }
 }
+/* Главная 3D-карусель */
+.home-hero-carousel {
+    overflow: hidden;
+    background: radial-gradient(circle at center, rgba(46,125,50,.14), rgba(0,0,0,.03));
+    border-radius: 28px;
+    padding: 32px 16px 44px;
+}
+.circle-gallery {
+    position: relative;
+    height: 420px;
+    perspective: 1200px;
+    transform-style: preserve-3d;
+}
+.circle-card {
+    --angle: calc(360deg / var(--items) * var(--i));
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 190px;
+    height: 260px;
+    margin-left: -95px;
+    margin-top: -130px;
+    border-radius: 20px;
+    overflow: hidden;
+    text-decoration: none;
+    color: #fff;
+    box-shadow: 0 18px 40px rgba(0,0,0,.28);
+    transform: rotateY(var(--angle)) translateZ(520px);
+    animation: gallerySpin 42s linear infinite;
+    background: #123;
+}
+.circle-gallery:hover .circle-card { animation-play-state: paused; }
+.circle-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(.82);
+    transition: transform .25s ease, filter .25s ease;
+}
+.circle-card:hover img { transform: scale(1.06); filter: brightness(.95); }
+.circle-card span {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+    padding: 8px 10px;
+    text-align: center;
+    border-radius: 14px;
+    background: rgba(0,0,0,.48);
+    backdrop-filter: blur(4px);
+    font-weight: 700;
+}
+@keyframes gallerySpin {
+    from { transform: rotateY(var(--angle)) translateZ(520px) rotateY(0deg); }
+    to { transform: rotateY(calc(var(--angle) - 360deg)) translateZ(520px) rotateY(360deg); }
+}
+@media (max-width: 992px) {
+    .circle-gallery { height: 330px; }
+    .circle-card { width: 150px; height: 210px; margin-left: -75px; margin-top: -105px; transform: rotateY(var(--angle)) translateZ(360px); }
+    @keyframes gallerySpin {
+        from { transform: rotateY(var(--angle)) translateZ(360px) rotateY(0deg); }
+        to { transform: rotateY(calc(var(--angle) - 360deg)) translateZ(360px) rotateY(360deg); }
+    }
+}
+.product-card-wrap { position: relative; }
+.wishlist-heart {
+    position: absolute;
+    z-index: 5;
+    top: 10px;
+    left: 10px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(255,255,255,.92);
+    color: #dc3545;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px rgba(0,0,0,.16);
+}
+.discount-badge-card {
+    position: absolute;
+    z-index: 4;
+    top: 10px;
+    right: 10px;
+}

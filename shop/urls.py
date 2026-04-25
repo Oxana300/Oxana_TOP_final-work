@@ -50,6 +50,7 @@ urlpatterns = [
     
     # Избранное
     path('wishlist/toggle/<slug:product_slug>/', views.toggle_wishlist, name='toggle_wishlist'),
+    path('wishlist/', views.wishlist_page, name='wishlist'),
 
     # Корзина и оформление заказа
     path('cart/', views.cart_page, name='cart'),

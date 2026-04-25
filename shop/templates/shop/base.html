@@ -91,6 +91,11 @@
                             <i class="bi bi-cart"></i> Корзина
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'shop:wishlist' %}">
+                            <i class="bi bi-heart"></i> Избранное
+                        </a>
+                    </li>
                     
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">

@@ -111,7 +111,7 @@ class ProductAdmin(admin.ModelAdmin):
             'fields': ('category', 'tags')
         }),
         ('Статус и наличие', {
-            'fields': ('status', 'is_featured', 'stock_quantity', 'rating')
+            'fields': ('status', 'is_featured', 'stock_quantity', 'rating', 'preorder_delivery_days')
         }),
     )
     
