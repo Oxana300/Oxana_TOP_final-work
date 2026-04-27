@@ -24,8 +24,125 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # БЕЗОПАСНОСТЬ
 # ============================================
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-temp-key-for-dev')
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool) # ВАЖНО: DEBUG всегда False в продакшене
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+
+# ============================================
+# ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ БЕЗОПАСНОСТИ
+# ============================================
+
+# 🔐 Защита от XSS-атак
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# 🔐 Перенаправление HTTP -> HTTPS
+SECURE_SSL_REDIRECT = not DEBUG  # True в продакшене
+
+# 🔐 HSTS (HTTP Strict Transport Security)
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0  # 1 год
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+
+# 🔐 Cookie только через HTTPS
+SESSION_COOKIE_SECURE = not DEBUG  # True в продакшене
+CSRF_COOKIE_SECURE = not DEBUG     # True в продакшене
+
+# 🔐 Защита сессий
+SESSION_COOKIE_HTTPONLY = True  # JavaScript не может читать cookie
+CSRF_COOKIE_HTTPONLY = True  # Защита от CSRF
+
+# 🔐 Защита от CSRF через SameSite
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# 🔐 Защита от clickjacking
+X_FRAME_OPTIONS = 'DENY'
+
+# 🔐 Ограничение размера запросов (защита от DoS)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
+
+
+# 🔐 Количество попыток входа (защита от bruteforce)
+# Требуется django-axes (pip install django-axes)
+# AXES_FAILURE_LIMIT = 5
+# AXES_COOLOFF_TIME = 1  # часы
+
+# 🔐 Безопасные заголовки
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# ============================================
+# ЛОГИРОВАНИЕ
+# ============================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {asctime} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        # Вывод в консоль (Railway собирает логи из stdout)
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'stream': 'ext://sys.stdout',
+        },
+        # Файл для локальной разработки
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+            'mode': 'a',
+            'maxBytes': 10485760,  # 10 MB
+            'backupCount': 5,
+        },
+    },
+    'loggers': {
+        # Логи Django
+        'django': {
+            'handlers': ['console', 'file'] if DEBUG else ['console'],
+            'level': 'INFO' if DEBUG else 'WARNING',
+            'propagate': False,
+        },
+        # Безопасность
+        'django.security': {
+            'handlers': ['console', 'file'] if DEBUG else ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        # Ошибки запросов
+        'django.request': {
+            'handlers': ['console', 'file'] if DEBUG else ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        # Ваше приложение
+        'shop': {
+            'handlers': ['console', 'file'] if DEBUG else ['console'],
+            'level': 'INFO' if DEBUG else 'WARNING',
+            'propagate': False,
+        },
+        # Telegram бот
+        'telegram_bot': {
+            'handlers': ['console', 'file'] if DEBUG else ['console'],
+            'level': 'INFO' if DEBUG else 'WARNING',
+            'propagate': False,
+        },
+    },
+    # Корневой логгер
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
+
 
 # ============================================
 # ПРИЛОЖЕНИЯ

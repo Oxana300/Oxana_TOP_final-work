@@ -422,7 +422,7 @@ class TicketCreateView(CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = 'Создать обращение'
-        context['button_text'] = 'отправить обращение'
+        context['button_text'] = 'Отправить обращение'
         return context
     
 class MyTicketsListView(LoginRequiredMixin, ListView):
@@ -706,6 +706,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
         context['stats'] = {
             'tickets_count': SupportTicket.objects.filter(user=self.request.user).count(),
             'reviews_count': ProductReview.objects.filter(user=self.request.user).count(),
+            'orders_count': Order.objects.filter(Q(user=self.request.user) | Q(email__iexact=self.request.user.email)).distinct().count(),
             'open_tickets': SupportTicket.objects.filter(
                 user=self.request.user, 
                 status__in=['new', 'in_progress']
@@ -780,8 +781,31 @@ def profile_avatar_delete(request):
 @login_required
 def profile_orders(request):
     """История заказов пользователя"""
-    # Здесь будет логика заказов
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    orders = (
+        Order.objects
+        .filter(Q(user=request.user) | Q(email__iexact=request.user.email))
+        .prefetch_related('items__product')
+        .distinct()
+        .order_by('-created_at')
+    )
+
+    from .models import SupportTicket, ProductReview
+    stats = {
+        'tickets_count': SupportTicket.objects.filter(user=request.user).count(),
+        'reviews_count': ProductReview.objects.filter(user=request.user).count(),
+        'orders_count': orders.count(),
+        'open_tickets': SupportTicket.objects.filter(
+            user=request.user,
+            status__in=['new', 'in_progress']
+        ).count(),
+    }
+
     return render(request, 'shop/profile/profile_orders.html', {
+        'orders': orders,
+        'profile': profile,
+        'stats': stats,
         'title': 'Мои заказы'
     })
 
@@ -1048,6 +1072,15 @@ def create_order(request):
         profile.save()
         order.bonus_points_earned = earned
         order.save()
+    # Telegram-уведомление отправляем только после полного расчета заказа.
+    try:
+        from telegram_bot.utils import notify_admins_about_order, notify_user_about_order_status
+        notify_admins_about_order(order)
+        if order.user:
+            notify_user_about_order_status(order.user, order)
+    except Exception as exc:
+        logger.error(f'Ошибка отправки Telegram-уведомления по заказу #{order.id}: {exc}')
+
 
     cart.items.all().delete()
     messages.success(request, f'Заказ #{order.id} успешно оформлен! Начислено бонусов: {order.bonus_points_earned} ✨')
@@ -1059,3 +1092,18 @@ def wishlist_page(request):
     """Страница избранного пользователя"""
     items = WishlistItem.objects.filter(user=request.user).select_related('product', 'product__category')
     return render(request, 'shop/wishlist.html', {'wishlist_items': items})
+
+
+def custom_404(request, exception=None):
+    """Кастомная страница 404"""
+    return render(request, '404.html', status=404)
+
+
+def custom_500(request):
+    """Кастомная страница 500"""
+    return render(request, '500.html', status=500)
+
+
+def custom_403(request, exception=None):
+    """Кастомная страница 403"""
+    return render(request, '403.html', status=403)

@@ -33,3 +33,8 @@ urlpatterns = [
 # ОКСАНА Добавляем обработку медиафайлов в режиме разработки
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Кастомные обработчики ошибок
+handler404 = 'shop.views.custom_404'
+handler500 = 'shop.views.custom_500'
+handler403 = 'shop.views.custom_403'
